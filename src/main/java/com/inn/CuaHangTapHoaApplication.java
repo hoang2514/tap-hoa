@@ -1,4 +1,4 @@
-package com.inn.taphoa.com.inn.taphoa;
+package com.inn;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
