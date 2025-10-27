@@ -8,12 +8,15 @@ import org.hibernate.annotations.DynamicUpdate;
 import java.io.Serial;
 import java.io.Serializable;
 
+@NamedQuery(name = "User.findByEmail", query = "SELECT u FROM User u WHERE u.email = :email")
+
 @Data
 @Entity
 @DynamicUpdate
 @DynamicInsert
 @Table(name = "user")
 
+// Class User is an entity mapping to table user in database
 public class User implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
