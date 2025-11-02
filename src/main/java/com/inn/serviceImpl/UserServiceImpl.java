@@ -42,6 +42,25 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public ResponseEntity<String> changePassword(Map<String, String> requestMap) {
+        try {
+            User user = userDao.findByEmail(requestMap.get("email"));
+            if (!Objects.isNull(user)) {
+                if (user.getPassword().equals(requestMap.get("oldPassword"))) {
+                    user.setPassword(requestMap.get("newPassword"));
+                    userDao.save(user);
+                    return TaphoaUtils.getResponseEntity("Password changed successfully", HttpStatus.OK);
+                }
+                return TaphoaUtils.getResponseEntity("Old password does not match", HttpStatus.BAD_REQUEST);
+            }
+            return TaphoaUtils.getResponseEntity("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        catch (Exception e) {
+            return TaphoaUtils.getResponseEntity("Exception while changing password", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     private boolean validateSignUpMap(Map<String, String> requestMap) {
         return requestMap.containsKey("email") && requestMap.containsKey("password") &&
         requestMap.containsKey("name") && requestMap.containsKey("contactNumber");
