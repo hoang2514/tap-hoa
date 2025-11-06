@@ -41,5 +41,15 @@ public class UserRestImpl implements UserRest {
         return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @Override
+    public ResponseEntity<String> forgotPassword(Map<String, String> requestMap) {
+        try {
+            return userService.forgotPassword(requestMap);
+        }
+        catch (Exception exception) {
+            return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.BAD_REQUEST);
+        }
+    }
+
 
 }
