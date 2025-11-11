@@ -14,10 +14,12 @@ import com.inn.utils.TaphoaUtils;
 import com.inn.wrapper.UserWrapper;
 
 public class UserRestImpl implements UserRest{
+    private UserService userService;
+
     @Override
     public ResponseEntity<List<UserWrapper>> getAllUser() {
         try {
-            // return UserService.getAllUser();
+            return userService.getAllUser();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -39,7 +41,7 @@ public class UserRestImpl implements UserRest{
     @Override
     public ResponseEntity<String> update(Map<String, String> requestMap) {
         try {
-            // return UserService.update(requestMap);
+            return userService.update(requestMap);
         } catch (Exception e) {
             e.printStackTrace();
         } return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);

@@ -9,14 +9,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.inn.JWT.JwtFilter;
 import com.inn.POJO.User;
 import com.inn.constants.TaphoaConstants;
 import com.inn.dao.UserDao;
 import com.inn.service.UserService;
+import com.inn.utils.EmailUtils;
 import com.inn.utils.TaphoaUtils;
 import com.inn.wrapper.UserWrapper;
 
 public class UserServiceImpl implements UserService {
+    @Autowired
+    JwtFilter jwtFilter;
+
+    @Autowired
+    EmailUtils emailUtils;
 
     @Autowired
     UserDao userDao;
@@ -50,20 +57,32 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<String> update(Map<String, String> requestMap) {
         try {
-            // if (jwtFilter.isAdmin()) {
-            //     Optional<User> optional = userDao.findById(Integer.parseInt(requestMap.get("id")));
-            //     if (!optional.isEmpty()) {
-            //         userDao.updateStatus(requestMap.get("status"), Integer.parseInt(requestMap.get("id")));
-            //         return TaphoaUtils.getResponseEntity("User status updated successfully.", HttpStatus.OK);
-            //     } else {
-            //         return TaphoaUtils.getResponseEntity("User ID does not exist.", HttpStatus.OK);
-            //     }
-            // } else {
-            //     return TaphoaUtils.getResponseEntity(TaphoaConstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
-            // }
+            if (jwtFilter.isAdmin()) {
+                Optional<User> optional = userDao.findById(Integer.parseInt(requestMap.get("id")));
+                if (!optional.isEmpty()) {
+                    userDao.updateStatus(requestMap.get("status"), Integer.parseInt(requestMap.get("id")));
+                    sendMailToAllAdmin(requestMap.get("status"), optional.get().getEmail(), userDao.getAllAdmin());
+                    return TaphoaUtils.getResponseEntity("User status updated successfully.", HttpStatus.OK);
+                } else {
+                    return TaphoaUtils.getResponseEntity("User ID does not exist.", HttpStatus.OK);
+                }
+            } else {
+                return TaphoaUtils.getResponseEntity(TaphoaConstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private void sendMailToAllAdmin(String status, String user, List<String> allAdmin) {
+        allAdmin.remove(jwtFilter.getCurrentUser());
+        if (status != null && status.equalsIgnoreCase("true")) {
+            emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account approved", 
+                "USER: "+user+" \n is approved by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
+        } else {
+            emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account disabled", 
+                "USER: "+user+" \n is disabled by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
+        }
     }
     
 }
