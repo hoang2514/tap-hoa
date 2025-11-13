@@ -43,11 +43,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<List<UserWrapper>> getAllUser() {
         try {
-            // if (jwtFilter.isAdmin()) {
-            //     return new ResponseEntity<>(userDao.getAllUser(), HttpStatus.OK);
-            // } else {
-            //     return new ResponseEntity<>(new ArrayList<>(), HttpStatus.UNAUTHORIZED);
-            // }
+            if (jwtFilter.isAdmin()) {
+                return new ResponseEntity<>(userDao.getAllUser(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.UNAUTHORIZED);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } 
