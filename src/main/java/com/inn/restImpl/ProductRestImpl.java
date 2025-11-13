@@ -1,5 +1,7 @@
 package com.inn.restImpl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import com.inn.constants.TaphoaConstants;
 import com.inn.rest.ProductRest;
 import com.inn.service.ProductService;
 import com.inn.utils.TaphoaUtils;
+import com.inn.wrapper.ProductWrapper;
 
 @RestController
 public class ProductRestImpl implements ProductRest {
@@ -26,6 +29,16 @@ public class ProductRestImpl implements ProductRest {
             e.printStackTrace();
         }
         return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
+    public ResponseEntity<List<ProductWrapper>> getAllProduct() {
+        try {
+            return productService.getAllProduct();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
     
 }

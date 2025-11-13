@@ -1,5 +1,7 @@
 package com.inn.serviceImpl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import com.inn.constants.TaphoaConstants;
 import com.inn.dao.ProductDao;
 import com.inn.service.ProductService;
 import com.inn.utils.TaphoaUtils;
+import com.inn.wrapper.ProductWrapper;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -68,6 +71,15 @@ public class ProductServiceImpl implements ProductService {
             }
         }
         return false;
+    }
+
+    @Override
+    public ResponseEntity<List<ProductWrapper>> getAllProduct() {
+        try {
+            return new ResponseEntity<>(productDao.getAllProduct(), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
     
 }
