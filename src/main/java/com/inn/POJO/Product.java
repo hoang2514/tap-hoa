@@ -19,6 +19,7 @@ import lombok.Data;
 
 @NamedQuery(name = "Product.getAllProduct", query =
         "SELECT NEW com.inn.wrapper.ProductWrapper(p.id, p.name, p.description, p.price, p.status, p.category.id, p.category.name) FROM Product p ")
+@NamedQuery(name = "Product.updateProductStatus", query = "update Product p set p.status=:status where p.id=:id")
 
 @Data
 @Entity

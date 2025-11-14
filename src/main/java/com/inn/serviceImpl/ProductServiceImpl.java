@@ -108,4 +108,39 @@ public class ProductServiceImpl implements ProductService {
         } return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @Override
+    public ResponseEntity<String> deleteProduct(Integer id) {
+        try {
+            if (jwtFilter.isAdmin()) {
+                Optional<Product> optional = productDao.findById(id);
+                if (!optional.isPresent()) {
+                    productDao.deleteById(id);
+                    return TaphoaUtils.getResponseEntity("Product deleted successfully.", HttpStatus.OK);
+                }
+                return TaphoaUtils.getResponseEntity("Product does not exist", HttpStatus.OK);
+            }
+            return TaphoaUtils.getResponseEntity(TaphoaConstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            return TaphoaUtils.getResponseEntity(TaphoaConstants.INVALID_DATA, HttpStatus.BAD_REQUEST);
+        }
+        // return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
+    public ResponseEntity<String> updateStatus(Map<String, String> requestMap) {
+        try {
+            if (jwtFilter.isAdmin()) {
+                Optional<Product> optional = productDao.findById(Integer.parseInt(requestMap.get("id")));
+                if (!optional.isPresent()) {
+                    productDao.updateProductStatus(requestMap.get("status"), Integer.parseInt(requestMap.get("id")));
+                    return TaphoaUtils.getResponseEntity("Product updated successfully.", HttpStatus.OK);
+                }
+                return TaphoaUtils.getResponseEntity("Product id does not exist.", HttpStatus.OK);
+            }
+            return TaphoaUtils.getResponseEntity(TaphoaConstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }
