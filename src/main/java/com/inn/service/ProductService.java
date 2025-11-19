@@ -3,6 +3,7 @@ package com.inn.service;
 import java.util.List;
 import java.util.Map;
 
+import jdk.javadoc.doclet.Reporter;
 import org.springframework.http.ResponseEntity;
 
 import com.inn.wrapper.ProductWrapper;
@@ -18,4 +19,8 @@ public interface ProductService {
     ResponseEntity<String> deleteProduct(Integer id);
 
     ResponseEntity<String> updateStatus(Map<String, String> requestMap);
+
+    ResponseEntity<List<ProductWrapper>> getByCategory(Integer id);
+
+    ResponseEntity<ProductWrapper> getProductById(Integer id);
 }
