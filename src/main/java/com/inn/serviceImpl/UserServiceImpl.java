@@ -4,7 +4,6 @@ import com.inn.JWT.CustomerUsersDetailsService;
 import com.inn.JWT.JwtFilter;
 import com.inn.JWT.JwtUtil;
 import com.inn.POJO.User;
-import com.inn.constants.TaphoaConstants;
 import com.inn.dao.UserDao;
 import com.inn.service.UserService;
 import com.inn.utils.TaphoaUtils;
@@ -18,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Logger;
 
 @Service
 @Slf4j
