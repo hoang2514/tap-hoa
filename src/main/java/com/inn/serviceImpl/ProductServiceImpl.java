@@ -113,7 +113,7 @@ public class ProductServiceImpl implements ProductService {
         try {
             if (jwtFilter.isAdmin()) {
                 Optional<Product> optional = productDao.findById(id);
-                if (!optional.isPresent()) {
+                if (!optional.isEmpty()) {
                     productDao.deleteById(id);
                     return TaphoaUtils.getResponseEntity("Product deleted successfully.", HttpStatus.OK);
                 }
@@ -131,9 +131,9 @@ public class ProductServiceImpl implements ProductService {
         try {
             if (jwtFilter.isAdmin()) {
                 Optional<Product> optional = productDao.findById(Integer.parseInt(requestMap.get("id")));
-                if (!optional.isPresent()) {
+                if (optional.isPresent()) {
                     productDao.updateProductStatus(requestMap.get("status"), Integer.parseInt(requestMap.get("id")));
-                    return TaphoaUtils.getResponseEntity("Product updated successfully.", HttpStatus.OK);
+                    return TaphoaUtils.getResponseEntity("Product status updated successfully.", HttpStatus.OK);
                 }
                 return TaphoaUtils.getResponseEntity("Product id does not exist.", HttpStatus.OK);
             }
