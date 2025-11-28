@@ -1,9 +1,11 @@
 package com.inn.wrapper;
+import java.io.Serializable;
 
 import lombok.Data;
 
 @Data
-public class ProductWrapper {
+// Implements Serializable for storing in Redis
+public class ProductWrapper implements Serializable {
 
     Integer id;
     String name;
