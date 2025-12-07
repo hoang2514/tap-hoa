@@ -1,9 +1,12 @@
 package com.inn.serviceImpl;
 
-import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.Optional;
 
+import org.apache.pdfbox.io.IOUtils;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,7 @@ import com.inn.service.BillService;
 import com.inn.utils.TaphoaUtils;
 
 import lombok.extern.slf4j.Slf4j;
+import java.io.*;
 
 @Slf4j
 @Service
@@ -161,5 +165,66 @@ private void insertBill(Map<String,Object> requestMap) {
         return requestMap.containsKey("name") && requestMap.containsKey("contactNumber")
             && requestMap.containsKey("email") && requestMap.containsKey("paymentMethod")
             && requestMap.containsKey("productDetail") && requestMap.containsKey("totalAmount");
+    }
+
+
+    @Override
+    public ResponseEntity<List<Bill>> getBills() {
+        List<Bill> list = new ArrayList<>();
+        if(jwtFilter.isAdmin()){
+            list = billDao.getAllBills();
+        }else{
+            list = billDao.getBillByUserName(jwtFilter.getCurrentUser());
+        }
+        return new ResponseEntity<>(list, HttpStatus.OK);
+    }
+
+
+    @Override
+    public ResponseEntity<byte[]> getPdf(Map<String, Object> requestMap) {
+        log.info("Inside getPdf : requestMap {}", requestMap);
+        try{
+            byte[] byteArray = new byte[0];
+            if(!requestMap.containsKey("uuid") && validateRequestMap(requestMap)){
+                return new ResponseEntity<>(byteArray, HttpStatus.BAD_REQUEST);
+            }
+            String filePath = TaphoaConstants.STORE_LOCATION + "\\"+(String)requestMap.get("uuid")+".pdf";
+            if (TaphoaUtils.isFileExist(filePath)){
+                byteArray = getByteArray(filePath);
+                return new ResponseEntity<>(byteArray, HttpStatus.OK);
+            }else{
+                requestMap.put("isGenerate", false);
+                generateReport(requestMap);
+                byteArray = getByteArray(filePath);
+                return new ResponseEntity<>(byteArray, HttpStatus.OK);
+            }
+        }catch (Exception ex){
+            log.error("Exception occurred while getting pdf", ex);
+        }
+        return null;
+    }
+
+    private byte[] getByteArray(String filePath) throws Exception{
+        File initialFile = new File(filePath);
+        InputStream targetStream = new FileInputStream(initialFile);
+        byte[] byteArray = IOUtils.toByteArray(targetStream);
+        targetStream.close();
+        return byteArray;
+    }
+
+
+    @Override
+    public ResponseEntity<String> deleteBill(Integer id) {
+        try{
+            Optional<Bill> optional = billDao.findById(id);
+            if(optional.isPresent()){
+                billDao.deleteById(id);
+                return TaphoaUtils.getResponseEntity("Bill Deleted Successfully", HttpStatus.OK);
+            }
+            return TaphoaUtils.getResponseEntity("Bill id does not exist", HttpStatus.OK);
+        }catch (Exception ex){
+            log.error("Exception occurred while deleting bill", ex);
+        }
+        return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

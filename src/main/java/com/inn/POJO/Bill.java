@@ -12,7 +12,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
+import jakarta.persistence.NamedQuery;
 
+@NamedQuery(name = "Bill.getAllBills", query = "select b from Bill b order by b.id desc")
+
+@NamedQuery(name = "Bill.getBillByUserName", query = "select b from Bill b where b.createdBy=:username order by b.id desc")
 @Data
 @Entity
 @DynamicUpdate
