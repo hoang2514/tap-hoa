@@ -34,7 +34,8 @@ public class ProductRestImpl implements ProductRest {
     @Override
     public ResponseEntity<List<ProductWrapper>> getAllProduct() {
         try {
-            return productService.getAllProduct();
+            // Controller gọi Service lấy List, sau đó bọc vào ResponseEntity
+            return new ResponseEntity<>(productService.getAllProduct(), HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -72,7 +73,7 @@ public class ProductRestImpl implements ProductRest {
     @Override
     public ResponseEntity<List<ProductWrapper>> getByCategory(Integer id) {
         try {
-            return productService.getByCategory(id);
+            return new ResponseEntity<>(productService.getByCategory(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -81,10 +82,9 @@ public class ProductRestImpl implements ProductRest {
     @Override
     public ResponseEntity<ProductWrapper> getProductById(Integer id) {
         try {
-            return productService.getProductById(id);
+            return new ResponseEntity<>(productService.getProductById(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ProductWrapper(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 }

@@ -1,16 +1,21 @@
 package com.inn.rest;
 
+import com.inn.POJO.Bill;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.inn.POJO.Bill;
-
 @RequestMapping("/bill")
 public interface BillRest {
-    
+
     @PostMapping(path="/generateReport")
     ResponseEntity<String> generateReport(@RequestBody Map<String, Object> requestMap);
 

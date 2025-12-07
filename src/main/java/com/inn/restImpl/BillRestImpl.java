@@ -6,14 +6,18 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.inn.POJO.Bill;
 import com.inn.constants.TaphoaConstants;
 import com.inn.rest.BillRest;
 import com.inn.service.BillService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.ui.Model;
 import com.inn.utils.TaphoaUtils;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -21,16 +25,15 @@ import lombok.extern.slf4j.Slf4j;
 public class BillRestImpl implements BillRest {
 
     @Autowired
-    BillService billService;
+    private BillService billService;
 
     @Override
     public ResponseEntity<String> generateReport(Map<String, Object> requestMap) {
-        try{
+        try {
             return billService.generateReport(requestMap);
-        }catch(Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
-
         return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -65,7 +68,7 @@ public class BillRestImpl implements BillRest {
             log.error("Exception in deleteBill", ex);
         }
         return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
-        
+
+
     }
-    
 }

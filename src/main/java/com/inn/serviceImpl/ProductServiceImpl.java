@@ -6,13 +6,16 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.inn.JWT.JwtFilter;
-import com.inn.POJO.Product;
 import com.inn.POJO.Category;
+import com.inn.POJO.Product;
 import com.inn.constants.TaphoaConstants;
 import com.inn.dao.ProductDao;
 import com.inn.service.ProductService;
@@ -29,6 +32,11 @@ public class ProductServiceImpl implements ProductService {
     JwtFilter jwtFilter;
 
     @Override
+    // Khi thêm mới: Xóa cache danh sách tổng và danh sách theo category
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true)
+    })
     public ResponseEntity<String> addNewProduct(Map<String, String> requestMap) {
         try {
             if (jwtFilter.isAdmin()) {
@@ -75,15 +83,25 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ResponseEntity<List<ProductWrapper>> getAllProduct() {
+    // Cache danh sách tổng. Tên cache: "products"
+    @Cacheable(value = "products")
+    public List<ProductWrapper> getAllProduct() {
         try {
-            return new ResponseEntity<>(productDao.getAllProduct(), HttpStatus.OK);
+            // Dòng này chỉ in ra nếu Cache CHƯA có dữ liệu (Cache Miss)
+            System.out.println("--- LOG: Đang lấy dữ liệu từ Database (Không dùng Cache) ---");
+            return productDao.getAllProduct();
         } catch (Exception e) {
             e.printStackTrace();
-        } return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
+        } return new ArrayList<>();
     }
 
     @Override
+    // Khi update: Xóa cache danh sách, cache category và cache CỤ THỂ của ID đó
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true),
+            @CacheEvict(value = "productById", key = "#requestMap.get('id')")
+    })
     public ResponseEntity<String> updateProduct(Map<String, String> requestMap) {
         try {
             if (jwtFilter.isAdmin()) {
@@ -109,11 +127,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    // Khi delete: Xóa hết các cache liên quan
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true),
+            @CacheEvict(value = "productById", key = "#id")
+    })
     public ResponseEntity<String> deleteProduct(Integer id) {
         try {
             if (jwtFilter.isAdmin()) {
                 Optional<Product> optional = productDao.findById(id);
-                if (!optional.isPresent()) {
+                if (!optional.isEmpty()) {
                     productDao.deleteById(id);
                     return TaphoaUtils.getResponseEntity("Product deleted successfully.", HttpStatus.OK);
                 }
@@ -127,13 +151,19 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    // Update Status cũng làm thay đổi dữ liệu hiển thị -> Xóa cache
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true),
+            @CacheEvict(value = "productById", key = "#requestMap.get('id')")
+    })
     public ResponseEntity<String> updateStatus(Map<String, String> requestMap) {
         try {
             if (jwtFilter.isAdmin()) {
                 Optional<Product> optional = productDao.findById(Integer.parseInt(requestMap.get("id")));
-                if (!optional.isPresent()) {
+                if (optional.isPresent()) {
                     productDao.updateProductStatus(requestMap.get("status"), Integer.parseInt(requestMap.get("id")));
-                    return TaphoaUtils.getResponseEntity("Product updated successfully.", HttpStatus.OK);
+                    return TaphoaUtils.getResponseEntity("Product status updated successfully.", HttpStatus.OK);
                 }
                 return TaphoaUtils.getResponseEntity("Product id does not exist.", HttpStatus.OK);
             }
@@ -144,21 +174,26 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ResponseEntity<List<ProductWrapper>> getByCategory(Integer id) {
+    // Cache danh sách theo Category. Key sẽ là ID của category
+    @Cacheable(value = "productsByCategory", key = "#id")
+    public List<ProductWrapper> getByCategory(Integer id) {
         try {
-            return new ResponseEntity<>(productDao.getProductByCategory(id),  HttpStatus.OK);
+            return productDao.getProductByCategory(id);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
+            e.printStackTrace();
         }
+        return new ArrayList<>();
     }
 
     @Override
-    public ResponseEntity<ProductWrapper> getProductById(Integer id) {
+    // Cache chi tiết 1 product. Key là ID product
+    @Cacheable(value = "productById", key = "#id")
+    public ProductWrapper getProductById(Integer id) {
         try {
-            return new ResponseEntity<>(productDao.getProductById(id), HttpStatus.OK);
+            return productDao.getProductById(id);
         } catch (Exception ex) {
-            return new ResponseEntity<>(new ProductWrapper(), HttpStatus.INTERNAL_SERVER_ERROR);
+            ex.printStackTrace();
         }
+        return new ProductWrapper();
     }
-
 }

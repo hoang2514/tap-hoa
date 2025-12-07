@@ -11,7 +11,7 @@ public interface ProductService {
 
     ResponseEntity<String> addNewProduct(Map<String, String> requestMap);
 
-    ResponseEntity<List<ProductWrapper>> getAllProduct();
+    List<ProductWrapper> getAllProduct();
 
     ResponseEntity<String> updateProduct(Map<String, String> requestMap);
 
@@ -19,7 +19,7 @@ public interface ProductService {
 
     ResponseEntity<String> updateStatus(Map<String, String> requestMap);
 
-    ResponseEntity<List<ProductWrapper>> getByCategory(Integer id);
+    List<ProductWrapper> getByCategory(Integer id);
 
-    ResponseEntity<ProductWrapper> getProductById(Integer id);
+    ProductWrapper getProductById(Integer id);
 }
