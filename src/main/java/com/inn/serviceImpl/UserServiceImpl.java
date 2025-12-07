@@ -6,6 +6,7 @@ import com.inn.JWT.JwtUtil;
 import com.inn.POJO.User;
 import com.inn.dao.UserDao;
 import com.inn.service.UserService;
+import com.inn.utils.EmailUtils;
 import com.inn.utils.TaphoaUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     UserDao userDao;
+
+    @Autowired
+    EmailUtils emailUtils;
 
     @Autowired
     AuthenticationManager authenticationManager;
@@ -57,6 +61,39 @@ public class UserServiceImpl implements UserService {
         }
         catch (Exception e){
             return TaphoaUtils.getResponseEntity("Exception while signing up", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public ResponseEntity<String> changePassword(Map<String, String> requestMap) {
+        try {
+            User user = userDao.findByEmail(requestMap.get("email"));
+            if (!Objects.isNull(user)) {
+                if (user.getPassword().equals(requestMap.get("oldPassword"))) {
+                    user.setPassword(requestMap.get("newPassword"));
+                    userDao.save(user);
+                    return TaphoaUtils.getResponseEntity("Password changed successfully", HttpStatus.OK);
+                }
+                return TaphoaUtils.getResponseEntity("Old password does not match", HttpStatus.BAD_REQUEST);
+            }
+            return TaphoaUtils.getResponseEntity("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        catch (Exception e) {
+            return TaphoaUtils.getResponseEntity("Exception while changing password", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public ResponseEntity<String> forgotPassword(Map<String, String> requestMap) {
+        try {
+            User user = userDao.findByEmail(requestMap.get("email"));
+            if (!Objects.isNull(user) && user.getEmail().equals(requestMap.get("email"))) {
+                emailUtils.sendOldPasswordEmail(user.getEmail(),user.getPassword());
+            }
+            return TaphoaUtils.getResponseEntity("Check your email for password.", HttpStatus.OK);
+        }
+        catch (Exception e) {
+            return TaphoaUtils.getResponseEntity("Exception while forgot password", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
