@@ -17,8 +17,11 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import lombok.Data;
 
-@NamedQuery(name = "Product.getAllProduct", query = 
-    "SELECT NEW com.inn.wrapper.ProductWrapper(p.id, p.name, p.description, p.price, p.status, p.category.id, p.category.name) FROM Product p ")
+@NamedQuery(name = "Product.getAllProduct", query =
+        "SELECT NEW com.inn.wrapper.ProductWrapper(p.id, p.name, p.description, p.price, p.status, p.category.id, p.category.name) FROM Product p ")
+@NamedQuery(name = "Product.updateProductStatus", query = "update Product p set p.status=:status where p.id=:id")
+@NamedQuery(name = "Product.getProductByCategory", query = "select new com.inn.wrapper.ProductWrapper(p.id,p.name) from Product p where p.category.id=:id and p.status='true'")
+@NamedQuery(name = "Product.getProductById", query = "select new com.inn.wrapper.ProductWrapper(p.id,p.name,p.description,p.price) from Product p where p.id=:id")
 
 @Data
 @Entity
@@ -26,7 +29,7 @@ import lombok.Data;
 @DynamicUpdate
 @Table(name = "product")
 public class Product implements Serializable {
-	public static final Long serialVersionUid = 123456L;
+    public static final Long serialVersionUid = 123456L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

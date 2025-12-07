@@ -45,6 +45,9 @@ public class User implements Serializable {
     @Column(name = "role")
     private String role;
 
+    @Column(name = "status")
+    private String status;
+
     public Integer getId() {
         return id;
     }
@@ -91,5 +94,13 @@ public class User implements Serializable {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
