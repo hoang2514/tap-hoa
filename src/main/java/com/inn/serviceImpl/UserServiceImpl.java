@@ -5,12 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
-import com.inn.JWT.JwtFilter;
-import com.inn.POJO.User;
 import com.inn.constants.TaphoaConstants;
 import com.inn.JWT.CustomerUsersDetailsService;
 import com.inn.JWT.JwtFilter;
@@ -30,7 +24,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -44,9 +37,6 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     EmailUtils emailUtils;
-
-    @Autowired
-    UserDao userDao;
     
     @Autowired
     AuthenticationManager authenticationManager;
@@ -78,7 +68,7 @@ public class UserServiceImpl implements UserService {
                 Optional<User> optional = userDao.findById(Integer.parseInt(requestMap.get("id")));
                 if (!optional.isEmpty()) {
                     userDao.updateStatus(requestMap.get("status"), Integer.parseInt(requestMap.get("id")));
-                    sendMailToAllAdmin(requestMap.get("status"), optional.get().getEmail(), userDao.getAllAdmin());
+                    // sendMailToAllAdmin(requestMap.get("status"), optional.get().getEmail(), userDao.getAllAdmin());
                     return TaphoaUtils.getResponseEntity("User status updated successfully.", HttpStatus.OK);
                 } else {
                     return TaphoaUtils.getResponseEntity("User ID does not exist.", HttpStatus.OK);
@@ -91,23 +81,23 @@ public class UserServiceImpl implements UserService {
         } return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    private void sendMailToAllAdmin(String status, String user, List<String> allAdmin) {
-        allAdmin.remove(jwtFilter.getCurrentUser());
-        if (status != null && status.equalsIgnoreCase("true")) {
-            emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account approved", 
-                "USER: "+user+" \n is approved by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
-        } else {
-            emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account disabled", 
-                "USER: "+user+" \n is disabled by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
-        }
-    }
+    // private void sendMailToAllAdmin(String status, String user, List<String> allAdmin) {
+    //     allAdmin.remove(jwtFilter.getCurrentUser());
+    //     if (status != null && status.equalsIgnoreCase("true")) {
+    //         emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account approved", 
+    //             "USER: "+user+" \n is approved by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
+    //     } else {
+    //         emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account disabled", 
+    //             "USER: "+user+" \n is disabled by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
+    //     }
+    // }
 
     @Override
     public ResponseEntity<String> signUp(Map<String, String> requestMap) {
         try{
             if(validateSignUpMap(requestMap)) {
                 // Find user information in database using DAO
-                User user = userDao.findByEmail(requestMap.get("email"));
+                User user = userDao.findByEmailId(requestMap.get("email"));
                 if (Objects.isNull(user)) {
                     userDao.save(getUserFromMap(requestMap));
                     return TaphoaUtils.getResponseEntity("User signed up successfully", HttpStatus.OK);
@@ -128,7 +118,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<String> changePassword(Map<String, String> requestMap) {
         try {
-            User user = userDao.findByEmail(requestMap.get("email"));
+            User user = userDao.findByEmailId(requestMap.get("email"));
             if (!Objects.isNull(user)) {
                 if (user.getPassword().equals(requestMap.get("oldPassword"))) {
                     user.setPassword(requestMap.get("newPassword"));
@@ -147,7 +137,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<String> forgotPassword(Map<String, String> requestMap) {
         try {
-            User user = userDao.findByEmail(requestMap.get("email"));
+            User user = userDao.findByEmailId(requestMap.get("email"));
             if (!Objects.isNull(user) && user.getEmail().equals(requestMap.get("email"))) {
                 emailUtils.sendOldPasswordEmail(user.getEmail(),user.getPassword());
             }
