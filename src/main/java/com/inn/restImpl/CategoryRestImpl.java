@@ -54,4 +54,14 @@ CategoryService categoryService;
         }
         return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @Override
+    public ResponseEntity<String> deleteCategory(Integer id) {
+        try {
+            return categoryService.deleteCategory(id);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

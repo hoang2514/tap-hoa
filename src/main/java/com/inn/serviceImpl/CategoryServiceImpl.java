@@ -104,4 +104,22 @@ public class CategoryServiceImpl implements CategoryService {
         }
         return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @Override
+    public ResponseEntity<String> deleteCategory(Integer id) {
+        try {
+            if (jwtFilter.isAdmin()) {
+                Optional<Category> optional = categoryDao.findById(id);
+                if (optional.isPresent()) {
+                    categoryDao.deleteById(id);
+                    return TaphoaUtils.getResponseEntity("Category deleted successfully", HttpStatus.OK);
+                }
+                return TaphoaUtils.getResponseEntity("Category id does not exist", HttpStatus.OK);
+            }
+            return TaphoaUtils.getResponseEntity(TaphoaConstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }
