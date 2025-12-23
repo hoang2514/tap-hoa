@@ -1,0 +1,89 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import Loader from '../components/Loader.jsx';
+import Message from '../components/Message.jsx';
+import { createApi } from '../lib/api.js';
+import { useAuth } from '../lib/auth.jsx';
+import { useCart } from '../lib/cart.jsx';
+
+export default function ProductDetail() {
+  const { id } = useParams();
+  const auth = useAuth();
+  const cart = useCart();
+  const api = useMemo(
+    () =>
+      createApi({
+        getToken: () => auth.token,
+        onUnauthorized: () => auth.logout()
+      }),
+    [auth]
+  );
+
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [msg, setMsg] = useState('');
+
+  async function load() {
+    setLoading(true);
+    setErr('');
+    try {
+      const data = await api.get(`/product/getById/${id}`);
+      setProduct(data);
+    } catch (e) {
+      setErr(e.message || 'Không thể tải sản phẩm');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  return (
+    <div className="card">
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ margin: 0 }}>Chi tiết sản phẩm</h2>
+        <Link className="btn" to="/">Quay lại</Link>
+      </div>
+      <div className="hr" />
+
+      <Message type="success" text={msg} />
+      <Message type="error" text={err} />
+
+      {loading ? <Loader /> : null}
+
+      {product ? (
+        <>
+          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>{product.name}</div>
+          <div className="muted small" style={{ marginBottom: 10 }}>
+            {product.categoryName ? `Danh mục: ${product.categoryName}` : ''}
+          </div>
+          <div style={{ marginBottom: 10 }}>{product.description}</div>
+          <div style={{ fontWeight: 800, marginBottom: 14 }}>{Number(product.price).toLocaleString('vi-VN')} ₫</div>
+
+          <button
+            className="btn primary"
+            onClick={async () => {
+              try {
+                await cart.add({
+                productId: product.id,
+                quantity: 1
+              });
+
+                setMsg('Đã thêm vào giỏ hàng');
+                setTimeout(() => setMsg(''), 1200);
+              } catch (e) {
+                setErr(e.message || 'Không thể thêm vào giỏ hàng');
+              }
+            }}
+          >
+            Thêm vào giỏ hàng
+          </button>
+        </>
+      ) : null}
+    </div>
+  );
+}
