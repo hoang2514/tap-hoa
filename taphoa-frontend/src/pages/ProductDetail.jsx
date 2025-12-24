@@ -68,10 +68,8 @@ export default function ProductDetail() {
             className="btn primary"
             onClick={async () => {
               try {
-                await cart.add({
-                productId: product.id,
-                quantity: 1
-              });
+                await cart.add(product.id, 1);
+
 
                 setMsg('Đã thêm vào giỏ hàng');
                 setTimeout(() => setMsg(''), 1200);
