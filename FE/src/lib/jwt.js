@@ -3,7 +3,7 @@ function base64UrlDecode(str) {
     const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
     const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
     const decoded = atob(padded);
-    // handle unicode
+
     return decodeURIComponent(
       decoded
         .split('')
