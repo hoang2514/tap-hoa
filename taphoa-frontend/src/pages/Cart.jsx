@@ -8,6 +8,7 @@ export default function Cart() {
   const cart = useCart();
   const nav = useNavigate();
   const [err, setErr] = useState('');
+  const [editingQty, setEditingQty] = useState({});
 
   const isEmpty = cart.items.length === 0;
 
@@ -69,12 +70,30 @@ export default function Cart() {
                         -
                       </button>
                       <input
-                        className="input"
-                        style={{ width: 70, textAlign: 'center' }}
-                        value={it.quantity}
-                        onChange={() => {}}
-                        readOnly
-                      />
+  className="input"
+  type="number"
+  min={1}
+  style={{ width: 70, textAlign: 'center' }}
+  value={editingQty[it.cartItemId] ?? it.quantity}
+  onChange={(e) => {
+    const v = Math.max(1, Number(e.target.value) || 1);
+    setEditingQty(prev => ({
+      ...prev,
+      [it.cartItemId]: v
+    }));
+  }}
+  onBlur={async () => {
+    const newQty = editingQty[it.cartItemId];
+    if (newQty && newQty !== it.quantity) {
+      try {
+        await cart.update(it.cartItemId, newQty);
+      } catch (e) {
+        setErr(e.message || 'Không thể cập nhật');
+      }
+    }
+  }}
+/>
+
                       <button
                         className="btn"
                         onClick={async () => {
