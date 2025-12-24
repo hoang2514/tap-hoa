@@ -68,7 +68,7 @@ public class UserServiceImpl implements UserService {
                 Optional<User> optional = userDao.findById(Integer.parseInt(requestMap.get("id")));
                 if (!optional.isEmpty()) {
                     userDao.updateStatus(requestMap.get("status"), Integer.parseInt(requestMap.get("id")));
-                    // sendMailToAllAdmin(requestMap.get("status"), optional.get().getEmail(), userDao.getAllAdmin());
+                    sendMailToAllAdmin(requestMap.get("status"), optional.get().getEmail(), userDao.getAllAdmin());
                     return TaphoaUtils.getResponseEntity("User status updated successfully.", HttpStatus.OK);
                 } else {
                     return TaphoaUtils.getResponseEntity("User ID does not exist.", HttpStatus.OK);
@@ -81,16 +81,16 @@ public class UserServiceImpl implements UserService {
         } return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    // private void sendMailToAllAdmin(String status, String user, List<String> allAdmin) {
-    //     allAdmin.remove(jwtFilter.getCurrentUser());
-    //     if (status != null && status.equalsIgnoreCase("true")) {
-    //         emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account approved", 
-    //             "USER: "+user+" \n is approved by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
-    //     } else {
-    //         emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account disabled", 
-    //             "USER: "+user+" \n is disabled by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
-    //     }
-    // }
+    private void sendMailToAllAdmin(String status, String user, List<String> allAdmin) {
+        allAdmin.remove(jwtFilter.getCurrentUser());
+        if (status != null && status.equalsIgnoreCase("true")) {
+            emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account approved", 
+                "USER: "+user+" \n is approved by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
+        } else {
+            emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account disabled", 
+                "USER: "+user+" \n is disabled by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
+        }
+    }
 
     @Override
     public ResponseEntity<String> signUp(Map<String, String> requestMap) {
