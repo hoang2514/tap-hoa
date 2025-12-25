@@ -62,6 +62,11 @@ export default function Cart() {
                           try {
                             const newQty = Math.max(1, (Number(it.quantity) || 1) - 1);
                             await cart.update(it.cartItemId, newQty);
+                            setEditingQty(prev => {
+                            const copy = { ...prev };
+                            delete copy[it.cartItemId];
+                            return copy;
+                        });
                           } catch (e) {
                             setErr(e.message || 'Không thể cập nhật');
                           }
@@ -87,6 +92,11 @@ export default function Cart() {
     if (newQty && newQty !== it.quantity) {
       try {
         await cart.update(it.cartItemId, newQty);
+        setEditingQty(prev => {
+  const copy = { ...prev };
+  delete copy[it.cartItemId];
+  return copy;
+});
       } catch (e) {
         setErr(e.message || 'Không thể cập nhật');
       }
@@ -101,6 +111,11 @@ export default function Cart() {
                           try {
                             const newQty = (Number(it.quantity) || 1) + 1;
                             await cart.update(it.cartItemId, newQty);
+                            setEditingQty(prev => {
+  const copy = { ...prev };
+  delete copy[it.cartItemId];
+  return copy;
+});
                           } catch (e) {
                             setErr(e.message || 'Không thể cập nhật');
                           }
