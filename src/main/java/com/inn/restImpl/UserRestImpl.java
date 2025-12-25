@@ -83,6 +83,6 @@ public class UserRestImpl implements UserRest {
         } catch (Exception exception) {
             log.error("Exception in getAllUser", exception);
         }
-        return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<List<UserWrapper>>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

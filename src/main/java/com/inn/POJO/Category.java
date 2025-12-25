@@ -15,7 +15,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @NamedQuery(name = "Category.getAllCategory", query = 
-    "SELECT c FROM Category c WHERE c.id IN (SELECT p.category FROM Product p where p.status='true')")
+    "SELECT c FROM Category c ")
 
 @Data
 @Entity
@@ -32,4 +32,20 @@ public class Category implements Serializable {
 
     @Column(name = "name")
     private String name;
+
+    // public Integer getId() {
+    //     return id;
+    // }
+
+    // public void setId(Integer id) {
+    //     this.id = id;
+    // }
+
+    // public String getName() {
+    //     return name;
+    // }
+
+    // public void setName(String name) {
+    //     this.name = name;
+    // }
 }

@@ -18,8 +18,8 @@ import com.inn.utils.TaphoaUtils;
 @RestController
 public class CategoryRestImpl implements CategoryRest {
 
-@Autowired
-CategoryService categoryService;
+    @Autowired
+    CategoryService categoryService;
 
     @Override
     public ResponseEntity<String> addNewCategory(Map<String, String> requestMap) {
