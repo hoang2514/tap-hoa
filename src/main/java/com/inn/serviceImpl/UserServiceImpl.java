@@ -97,7 +97,7 @@ public class UserServiceImpl implements UserService {
         try{
             if(validateSignUpMap(requestMap)) {
                 // Find user information in database using DAO
-                User user = userDao.findByEmailId(requestMap.get("email"));
+                User user = userDao.findByEmail(requestMap.get("email"));
                 if (Objects.isNull(user)) {
                     userDao.save(getUserFromMap(requestMap));
                     return TaphoaUtils.getResponseEntity("User signed up successfully", HttpStatus.OK);
@@ -118,7 +118,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<String> changePassword(Map<String, String> requestMap) {
         try {
-            User user = userDao.findByEmailId(requestMap.get("email"));
+            User user = userDao.findByEmail(requestMap.get("email"));
             if (!Objects.isNull(user)) {
                 if (user.getPassword().equals(requestMap.get("oldPassword"))) {
                     user.setPassword(requestMap.get("newPassword"));
@@ -137,7 +137,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<String> forgotPassword(Map<String, String> requestMap) {
         try {
-            User user = userDao.findByEmailId(requestMap.get("email"));
+            User user = userDao.findByEmail(requestMap.get("email"));
             if (!Objects.isNull(user) && user.getEmail().equals(requestMap.get("email"))) {
                 emailUtils.sendOldPasswordEmail(user.getEmail(),user.getPassword());
             }

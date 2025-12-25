@@ -12,7 +12,7 @@ import com.inn.wrapper.UserWrapper;
 import jakarta.transaction.Transactional;
 
 public interface UserDao extends JpaRepository<User, Integer> {
-    User findByEmailId(@Param("email") String email);
+    User findByEmail(@Param("email") String email);
 
     List<UserWrapper> getAllUser();
 
