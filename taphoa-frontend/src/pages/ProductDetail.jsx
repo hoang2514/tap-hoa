@@ -23,6 +23,8 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
+  const [qty, setQty] = useState(1);
+
 
   async function load() {
     setLoading(true);
@@ -64,11 +66,41 @@ export default function ProductDetail() {
           <div style={{ marginBottom: 10 }}>{product.description}</div>
           <div style={{ fontWeight: 800, marginBottom: 14 }}>{Number(product.price).toLocaleString('vi-VN')} ₫</div>
 
+          <div className="row" style={{ alignItems: 'center', marginBottom: 12 }}>
+  <span style={{ marginRight: 10 }}>Số lượng:</span>
+
+  <button
+    className="btn"
+    onClick={() => setQty(q => Math.max(1, q - 1))}
+  >
+    -
+  </button>
+
+  <input
+    className="input"
+    type="number"
+    min={1}
+    value={qty}
+    onChange={(e) =>
+      setQty(Math.max(1, Number(e.target.value) || 1))
+    }
+    style={{ width: 80, textAlign: 'center', margin: '0 8px' }}
+  />
+
+  <button
+    className="btn"
+    onClick={() => setQty(q => q + 1)}
+  >
+    +
+  </button>
+</div>
+
+
           <button
             className="btn primary"
             onClick={async () => {
               try {
-                await cart.add(product.id, 1);
+                await cart.add(product.id, qty);
 
 
                 setMsg('Đã thêm vào giỏ hàng');
