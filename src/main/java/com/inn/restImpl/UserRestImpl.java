@@ -32,6 +32,26 @@ public class UserRestImpl implements UserRest {
     }
 
     @Override
+    public ResponseEntity<String> verifyOTP(Map<String, String> requestMap) {
+        try {
+            return userService.verifyOTP(requestMap);
+        } catch (Exception exception) {
+            log.error("Exception in verifyOTP", exception);
+        }
+        return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
+    public ResponseEntity<String> resendOTP(Map<String, String> requestMap) {
+        try {
+            return userService.resendOTP(requestMap);
+        } catch (Exception exception) {
+            log.error("Exception in resendOTP", exception);
+        }
+        return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
     public ResponseEntity<String> changePassword(@RequestBody Map<String, String> requestMap) {
         try {
             return userService.changePassword(requestMap);

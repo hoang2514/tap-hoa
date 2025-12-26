@@ -36,7 +36,7 @@ public class SecurityConfig {
             .cors().and()
             .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/user/login", "/user/forgotPassword", "/user/signup", "/bill", "/bill/submitOrder", "/bill/vnpay-payment/**").permitAll()
+                        .requestMatchers("/user/login", "/user/forgotPassword", "/user/signup", "/user/verifyOTP", "/user/resendOTP", "/bill", "/bill/submitOrder", "/bill/vnpay-payment/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
