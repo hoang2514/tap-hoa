@@ -67,6 +67,9 @@ public class ProductServiceImpl implements ProductService {
         product.setName(requestMap.get("name"));
         product.setDescription(requestMap.get("description"));
         product.setPrice(Float.parseFloat(requestMap.get("price")));
+        if (requestMap.containsKey("imageUrl")) {
+            product.setImageUrl(requestMap.get("imageUrl"));
+        }
         return product;
     }
 
