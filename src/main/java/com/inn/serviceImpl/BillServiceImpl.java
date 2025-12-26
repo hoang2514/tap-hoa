@@ -275,7 +275,7 @@ public class BillServiceImpl implements BillService {
     private boolean validateRequestMap(Map<String,Object> requestMap) {
         return requestMap.containsKey("name") && requestMap.containsKey("contactNumber")
                 && requestMap.containsKey("email") && requestMap.containsKey("paymentMethod")
-                && requestMap.containsKey("productDetail") && requestMap.containsKey("totalAmount");
+                && requestMap.containsKey("productDetails") && requestMap.containsKey("totalAmount");
     }
 
 
@@ -338,6 +338,4 @@ public class BillServiceImpl implements BillService {
         }
         return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-
 }
