@@ -4,6 +4,7 @@ import Message from '../../components/Message.jsx';
 import Loader from '../../components/Loader.jsx';
 import { createApi } from '../../lib/api.js';
 import { useAuth } from '../../lib/auth.jsx';
+import { uploadImageToCloudinary } from "../../lib/cloudinary.js";
 
 export default function Products() {
   const auth = useAuth();
@@ -21,6 +22,7 @@ export default function Products() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
+  const [imageFile, setImageFile] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
   const [name, setName] = useState('');
@@ -59,13 +61,27 @@ export default function Products() {
     e.preventDefault();
     setErr('');
     setMsg('');
+    if (!name || !price || !categoryId) {
+      setErr('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
     try {
+      let imageUrl = null;
+
+      if (imageFile) {
+        imageUrl = await uploadImageToCloudinary(imageFile);
+      }
+
       const payload = {
         name,
         description,
         price: String(price),
-        categoryId: String(categoryId)
+        categoryId: String(categoryId),
+        imageUrl
       };
+
+      console.log("SUBMIT PAYLOAD", payload);
 
       let res;
       if (editingId) {
@@ -103,6 +119,15 @@ export default function Products() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
+            />
+
+            <div style={{ height: 10 }} />
+            <label className="label">Ảnh sản phẩm</label>
+            <input
+              type="file"
+              accept="image/*"
+              className="input"
+              onChange={(e) => setImageFile(e.target.files[0])}
             />
 
             <div style={{ height: 10 }} />
@@ -156,16 +181,33 @@ export default function Products() {
             <thead>
               <tr>
                 <th>ID</th>
+                <th>Ảnh</th>
                 <th>Tên</th>
                 <th>Danh mục</th>
                 <th>Giá</th>
-                <th></th>
+
               </tr>
             </thead>
             <tbody>
               {products.map((p) => (
                 <tr key={p.id}>
                   <td>{p.id}</td>
+                  <td>
+                    {p.imageUrl ? (
+                      <img
+                        src={p.imageUrl}
+                        alt={p.name}
+                        style={{
+                          width: 60,
+                          height: 60,
+                          objectFit: 'cover',
+                          borderRadius: 6
+                        }}
+                      />
+                    ) : (
+                      <span className="muted">No image</span>
+                    )}
+                  </td>
                   <td>
                     <div style={{ fontWeight: 700 }}>{p.name}</div>
                     <div className="muted small">{p.description}</div>

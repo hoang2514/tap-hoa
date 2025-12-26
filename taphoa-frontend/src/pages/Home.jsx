@@ -78,6 +78,19 @@ export default function Home() {
       <div className="grid">
         {filtered.map((p) => (
           <div className="card" key={p.id}>
+            {p.imageUrl ? (
+              <img
+                src={p.imageUrl}
+                alt={p.name}
+                style={{
+                  width: '100%',
+                  height: 160,
+                  objectFit: 'cover',
+                  borderRadius: 6,
+                  marginBottom: 8
+                }}
+              />
+            ) : null}
             <div style={{ fontWeight: 700, marginBottom: 6 }}>{p.name}</div>
             <div className="muted small" style={{ marginBottom: 8 }}>
               {p.categoryName ? `Danh mục: ${p.categoryName}` : ''}

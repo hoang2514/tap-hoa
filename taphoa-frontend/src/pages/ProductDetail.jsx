@@ -59,6 +59,23 @@ export default function ProductDetail() {
 
       {product ? (
         <>
+          {product.imageUrl ? (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              style={{
+                width: '100%',
+                maxWidth: 320,
+                height: 'auto',
+                marginBottom: 16,
+                borderRadius: 8,
+                objectFit: 'cover'
+              }}
+              // onError={(e) => {
+              //   e.target.style.display = 'none';
+              // }}
+            />
+          ) : "null"}
           <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>{product.name}</div>
           <div className="muted small" style={{ marginBottom: 10 }}>
             {product.categoryName ? `Danh mục: ${product.categoryName}` : ''}
@@ -67,33 +84,33 @@ export default function ProductDetail() {
           <div style={{ fontWeight: 800, marginBottom: 14 }}>{Number(product.price).toLocaleString('vi-VN')} ₫</div>
 
           <div className="row" style={{ alignItems: 'center', marginBottom: 12 }}>
-  <span style={{ marginRight: 10 }}>Số lượng:</span>
+            <span style={{ marginRight: 10 }}>Số lượng:</span>
 
-  <button
-    className="btn"
-    onClick={() => setQty(q => Math.max(1, q - 1))}
-  >
-    -
-  </button>
+            <button
+              className="btn"
+              onClick={() => setQty(q => Math.max(1, q - 1))}
+            >
+              -
+            </button>
 
-  <input
-    className="input"
-    type="number"
-    min={1}
-    value={qty}
-    onChange={(e) =>
-      setQty(Math.max(1, Number(e.target.value) || 1))
-    }
-    style={{ width: 80, textAlign: 'center', margin: '0 8px' }}
-  />
+            <input
+              className="input"
+              type="number"
+              min={1}
+              value={qty}
+              onChange={(e) =>
+                setQty(Math.max(1, Number(e.target.value) || 1))
+              }
+              style={{ width: 80, textAlign: 'center', margin: '0 8px' }}
+            />
 
-  <button
-    className="btn"
-    onClick={() => setQty(q => q + 1)}
-  >
-    +
-  </button>
-</div>
+            <button
+              className="btn"
+              onClick={() => setQty(q => q + 1)}
+            >
+              +
+            </button>
+          </div>
 
 
           <button
