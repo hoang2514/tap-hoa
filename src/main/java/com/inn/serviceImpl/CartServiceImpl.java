@@ -63,11 +63,26 @@ public class CartServiceImpl implements CartService {
                 return TaphoaUtils.getResponseEntity("Product not available", HttpStatus.BAD_REQUEST);
             }
 
+            // Kiểm tra số lượng hàng trong kho
+            Product product = productOpt.get();
+            if (product.getQuantity() == null || product.getQuantity() <= 0) {
+                return TaphoaUtils.getResponseEntity("Product out of stock", HttpStatus.BAD_REQUEST);
+            }
+
             CartItem existing = cartItemDao.findByUserEmailAndProduct_Id(currentUser, productId);
             if (existing != null) {
-                existing.setQuantity(existing.getQuantity() + quantity);
+                Integer newQuantity = existing.getQuantity() + quantity;
+                // Kiểm tra nếu tổng số lượng hàng mua vượt quá số lượng hàng trong kho
+                if (newQuantity > product.getQuantity()) {
+                    return TaphoaUtils.getResponseEntity("Insufficient stock. Available: " + product.getQuantity(), HttpStatus.BAD_REQUEST);
+                }
+                existing.setQuantity(newQuantity);
                 cartItemDao.save(existing);
             } else {
+                // Kiểm tra nếu số lượng hàng mua vượt quá số lượng hàng trong kho
+                if (quantity > product.getQuantity()) {
+                    return TaphoaUtils.getResponseEntity("Insufficient stock. Available: " + product.getQuantity(), HttpStatus.BAD_REQUEST);
+                }
                 CartItem cartItem = new CartItem();
                 cartItem.setUserEmail(currentUser);
                 cartItem.setProduct(productOpt.get());
@@ -97,6 +112,13 @@ public class CartServiceImpl implements CartService {
                 return TaphoaUtils.getResponseEntity("Cart item not found", HttpStatus.NOT_FOUND);
             }
             CartItem cartItem = cartItemOpt.get();
+            Product product = cartItem.getProduct();
+
+            // Kiểm tra số lượng hàng trong kho
+            if (product.getQuantity() == null || quantity > product.getQuantity()) {
+                return TaphoaUtils.getResponseEntity("Insufficient stock. Available: " + product.getQuantity(), HttpStatus.BAD_REQUEST);
+            }
+
             cartItem.setQuantity(quantity);
             cartItemDao.save(cartItem);
             return TaphoaUtils.getResponseEntity("Cart item updated", HttpStatus.OK);

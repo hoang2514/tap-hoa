@@ -67,11 +67,12 @@ public class ProductServiceImpl implements ProductService {
         product.setName(requestMap.get("name"));
         product.setDescription(requestMap.get("description"));
         product.setPrice(Float.parseFloat(requestMap.get("price")));
+        product.setQuantity(Integer.parseInt(requestMap.get("quantity")));
         return product;
     }
 
     private boolean validateProductMap(Map<String,String> requestMap, boolean validateId) {
-        if (requestMap.containsKey("name")) {
+        if (requestMap.containsKey("name") && requestMap.containsKey("quantity")) {
             if (requestMap.containsKey("id") && validateId) {
                 return true;
             }
