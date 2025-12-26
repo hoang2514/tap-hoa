@@ -14,8 +14,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import lombok.Data;
 
-@NamedQuery(name = "Category.getAllCategory", query = 
-    "SELECT c FROM Category c ")
+@NamedQuery(name = "Category.getAllCategory", query = "SELECT c FROM Category c")
 
 @Data
 @Entity

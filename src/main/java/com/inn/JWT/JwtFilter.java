@@ -12,7 +12,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.lang.NonNull;
 
 import java.io.IOException;
 
@@ -29,7 +28,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private String userName = null;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         if(request.getServletPath().matches("/user/login|/user/forgotPassword|/user/signup|/bill|/bill/submitOrder|/bill/vnpay-payment")) {
             filterChain.doFilter(request, response);

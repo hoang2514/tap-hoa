@@ -1,11 +1,5 @@
 package com.inn.serviceImpl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import com.inn.constants.TaphoaConstants;
 import com.inn.JWT.CustomerUsersDetailsService;
 import com.inn.JWT.JwtFilter;
 import com.inn.JWT.JwtUtil;
@@ -14,8 +8,6 @@ import com.inn.dao.UserDao;
 import com.inn.service.UserService;
 import com.inn.utils.EmailUtils;
 import com.inn.utils.TaphoaUtils;
-import com.inn.wrapper.UserWrapper;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,20 +16,19 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
-    @Autowired
-    JwtFilter jwtFilter;
-  
+
     @Autowired
     UserDao userDao;
 
     @Autowired
     EmailUtils emailUtils;
-    
+
     @Autowired
     AuthenticationManager authenticationManager;
 
@@ -47,50 +38,8 @@ public class UserServiceImpl implements UserService {
     @Autowired
     JwtUtil jwtUtil;
 
-    @Override
-    public ResponseEntity<List<UserWrapper>> getAllUser() {
-        try {
-            if (jwtFilter.isAdmin()) {
-                return new ResponseEntity<>(userDao.getAllUser(), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.UNAUTHORIZED);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
-        return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @Override
-    public ResponseEntity<String> update(Map<String, String> requestMap) {
-        try {
-            if (jwtFilter.isAdmin()) {
-                Optional<User> optional = userDao.findById(Integer.parseInt(requestMap.get("id")));
-                if (!optional.isEmpty()) {
-                    userDao.updateStatus(requestMap.get("status"), Integer.parseInt(requestMap.get("id")));
-                    sendMailToAllAdmin(requestMap.get("status"), optional.get().getEmail(), userDao.getAllAdmin());
-                    return TaphoaUtils.getResponseEntity("User status updated successfully.", HttpStatus.OK);
-                } else {
-                    return TaphoaUtils.getResponseEntity("User ID does not exist.", HttpStatus.OK);
-                }
-            } else {
-                return TaphoaUtils.getResponseEntity(TaphoaConstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    private void sendMailToAllAdmin(String status, String user, List<String> allAdmin) {
-        allAdmin.remove(jwtFilter.getCurrentUser());
-        if (status != null && status.equalsIgnoreCase("true")) {
-            emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account approved", 
-                "USER: "+user+" \n is approved by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
-        } else {
-            emailUtils.sendSimpleMessage(jwtFilter.getCurrentUser(), "Account disabled", 
-                "USER: "+user+" \n is disabled by \nADMIN: "+ jwtFilter.getCurrentUser(), allAdmin);
-        }
-    }
+    @Autowired
+    JwtFilter jwtFilter;
 
     @Override
     public ResponseEntity<String> signUp(Map<String, String> requestMap) {
