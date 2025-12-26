@@ -14,6 +14,12 @@ public interface UserRest {
     @PostMapping(path = "/signup")
     public ResponseEntity<String> signUp(@RequestBody (required=true) Map<String, String> requestMap);
 
+    @PostMapping(path = "/verifyOTP")
+    public ResponseEntity<String> verifyOTP(@RequestBody (required=true) Map<String, String> requestMap);
+
+    @PostMapping(path = "/resendOTP")
+    public ResponseEntity<String> resendOTP(@RequestBody (required=true) Map<String, String> requestMap);
+
     @PostMapping(path = "/login")
     public ResponseEntity<String> login(@RequestBody (required=true) Map<String, String> requestMap);
     @PostMapping(path = "/changePassword")
