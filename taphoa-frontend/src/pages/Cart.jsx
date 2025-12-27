@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Message from '../components/Message.jsx';
 import Loader from '../components/Loader.jsx';
@@ -9,6 +9,16 @@ export default function Cart() {
   const nav = useNavigate();
   const [err, setErr] = useState('');
   const [editingQty, setEditingQty] = useState({});
+
+  useEffect(() => {
+      if (!err) return;
+
+      const timer = setTimeout(() => {
+        setErr('');
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }, [err]);
 
   const isEmpty = cart.items.length === 0;
 

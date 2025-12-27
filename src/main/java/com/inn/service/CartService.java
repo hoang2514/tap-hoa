@@ -10,10 +10,12 @@ public interface CartService {
 
     ResponseEntity<List<CartItemWrapper>> getCartItems();
 
-    ResponseEntity<String> addToCart(Map<String, Object> requestMap);
+    ResponseEntity<?> addToCart(Map<String, Object> requestMap);
 
-    ResponseEntity<String> updateCartItem(Integer cartItemId, Map<String, Object> requestMap);
+    ResponseEntity<?> updateCartItem(Integer cartItemId, Map<String, Object> requestMap);
 
     ResponseEntity<String> deleteCartItem(Integer cartItemId);
+
+    ResponseEntity<?> clearCart();
 }
 

@@ -32,7 +32,7 @@ public class UserRestImpl implements UserRest {
     }
 
     @Override
-    public ResponseEntity<String> verifyOTP(Map<String, String> requestMap) {
+    public ResponseEntity<?> verifyOTP(Map<String, String> requestMap) {
         try {
             return userService.verifyOTP(requestMap);
         } catch (Exception exception) {

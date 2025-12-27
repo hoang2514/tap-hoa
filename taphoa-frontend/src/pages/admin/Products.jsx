@@ -29,6 +29,7 @@ export default function Products() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [quantity, setQuantity] = useState('');
 
   async function loadAll() {
     setLoading(true);
@@ -55,6 +56,7 @@ export default function Products() {
     setDescription('');
     setPrice('');
     setCategoryId('');
+    setQuantity('');
   }
 
   async function submit(e) {
@@ -78,7 +80,8 @@ export default function Products() {
         description,
         price: String(price),
         categoryId: String(categoryId),
-        imageUrl
+        imageUrl,
+        quantity: String(quantity),
       };
 
       console.log("SUBMIT PAYLOAD", payload);
@@ -143,6 +146,17 @@ export default function Products() {
             />
 
             <div style={{ height: 10 }} />
+              <label className="label">Số lượng trong kho</label>
+              <input
+                className="input"
+                type="number"
+                min="0"
+                value={quantity }
+                onChange={(e) => setQuantity(e.target.value)}
+                required
+             />
+
+            <div style={{ height: 10 }} />
             <label className="label">Danh mục</label>
             <select className="input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
               <option value="">Chọn danh mục</option>
@@ -185,6 +199,7 @@ export default function Products() {
                 <th>Tên</th>
                 <th>Danh mục</th>
                 <th>Giá</th>
+                <th>Kho</th>
 
               </tr>
             </thead>
@@ -224,6 +239,7 @@ export default function Products() {
                           setDescription(p.description || '');
                           setPrice(String(p.price || ''));
                           setCategoryId(String(p.categoryId || ''));
+                          setQuantity(String(p.quantity || '0'));
                         }}
                       >
                         Sửa

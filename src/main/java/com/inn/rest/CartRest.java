@@ -14,12 +14,15 @@ public interface CartRest {
     ResponseEntity<List<CartItemWrapper>> getCartItems();
 
     @PostMapping
-    ResponseEntity<String> addToCart(@RequestBody Map<String, Object> requestMap);
+    ResponseEntity<?> addToCart(@RequestBody Map<String, Object> requestMap);
 
     @PutMapping(path = "/{cartItemId}")
-    ResponseEntity<String> updateCartItem(@PathVariable Integer cartItemId, @RequestBody Map<String, Object> requestMap);
+    ResponseEntity<?> updateCartItem(@PathVariable Integer cartItemId, @RequestBody Map<String, Object> requestMap);
 
     @DeleteMapping(path = "/{cartItemId}")
     ResponseEntity<String> deleteCartItem(@PathVariable Integer cartItemId);
+
+    @DeleteMapping("/clear")
+    public ResponseEntity<?> clearCart();
 }
 

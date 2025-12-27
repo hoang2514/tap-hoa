@@ -26,13 +26,6 @@ public class ProductWrapper implements Serializable {
         this.name = name;
     }
 
-    public ProductWrapper(Integer id, String name, String description, Float price) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.price = price;
-    }
-
     public ProductWrapper(Integer id, String name, String description, Float price, Integer quantity) {
         this.id = id;
         this.name = name;

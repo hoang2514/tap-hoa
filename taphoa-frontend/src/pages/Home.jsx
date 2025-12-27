@@ -95,6 +95,9 @@ export default function Home() {
             <div className="muted small" style={{ marginBottom: 8 }}>
               {p.categoryName ? `Danh mục: ${p.categoryName}` : ''}
             </div>
+            <div className="small" style={{ marginBottom: 8, color: p.quantity > 0 ? '#28a745' : '#dc3545' }}>
+                Còn lại: {p.quantity}
+            </div>
             <div style={{ marginBottom: 10 }}>{p.description}</div>
             <div className="row" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontWeight: 700 }}>{Number(p.price).toLocaleString('vi-VN')} ₫</div>

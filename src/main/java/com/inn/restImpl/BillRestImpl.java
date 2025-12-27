@@ -6,17 +6,12 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.inn.POJO.Bill;
 import com.inn.constants.TaphoaConstants;
 import com.inn.rest.BillRest;
 import com.inn.service.BillService;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.ui.Model;
 import com.inn.utils.TaphoaUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +23,7 @@ public class BillRestImpl implements BillRest {
     private BillService billService;
 
     @Override
-    public ResponseEntity<String> generateReport(Map<String, Object> requestMap) {
+    public ResponseEntity<?> generateReport(Map<String, Object> requestMap) {
         try {
             return billService.generateReport(requestMap);
         } catch (Exception ex) {

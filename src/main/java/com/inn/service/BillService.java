@@ -12,7 +12,7 @@ import com.inn.POJO.Bill;
 public interface BillService {
     String createOrder(int amount, String orderInfo, String baseUrl);
     int orderReturn(HttpServletRequest request);
-    ResponseEntity<String> generateReport(Map<String, Object> requestMap);
+    ResponseEntity<?> generateReport(Map<String, Object> requestMap);
 
     ResponseEntity<List<Bill>> getBills();
 

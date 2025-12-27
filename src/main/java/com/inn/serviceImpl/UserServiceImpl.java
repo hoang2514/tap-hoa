@@ -98,49 +98,48 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResponseEntity<String> verifyOTP(Map<String, String> requestMap) {
+    public ResponseEntity<?> verifyOTP(Map<String, String> requestMap) {
         try {
             String email = requestMap.get("email");
             String otp = requestMap.get("otp");
-            
+
             if (email == null || otp == null) {
-                return TaphoaUtils.getResponseEntity("Email và OTP là bắt buộc", HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Email và OTP là bắt buộc"));
             }
-            
-            // Get signup data from Redis
+
             String redisKey = "signup:" + email;
             String signupDataJson = redisTemplate.opsForValue().get(redisKey);
-            
+
             if (signupDataJson == null) {
-                return TaphoaUtils.getResponseEntity("OTP đã hết hạn hoặc không tồn tại. Vui lòng gửi lại mã OTP.", HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "OTP đã hết hạn hoặc không tồn tại. Vui lòng gửi lại mã OTP."));
             }
-            
-            // Parse signup data
+
             Gson gson = new Gson();
             Map<String, String> signupData = gson.fromJson(signupDataJson, new TypeToken<Map<String, String>>(){}.getType());
-            
-            // Verify OTP
+
             if (!otp.equals(signupData.get("otp"))) {
-                return TaphoaUtils.getResponseEntity("Mã OTP không đúng", HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Mã OTP không đúng"));
             }
-            
-            // Check if OTP is still valid (within 30 seconds)
+
             String otpTimestampStr = signupData.get("otpTimestamp");
             if (otpTimestampStr != null) {
                 try {
                     long otpTimestamp = Long.parseLong(otpTimestampStr);
                     long currentTime = System.currentTimeMillis();
                     long elapsedSeconds = (currentTime - otpTimestamp) / 1000;
-                    
+
                     if (elapsedSeconds > 30) {
-                        return TaphoaUtils.getResponseEntity("Mã OTP đã hết hạn. Vui lòng gửi lại mã OTP.", HttpStatus.BAD_REQUEST);
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("message", "Mã OTP đã hết hạn. Vui lòng gửi lại mã OTP."));
                     }
                 } catch (NumberFormatException e) {
                     log.error("Invalid OTP timestamp format", e);
                 }
             }
-            
-            // OTP is correct, create user account
+
             User user = new User();
             user.setEmail(signupData.get("email"));
             user.setPassword(signupData.get("password"));
@@ -148,18 +147,18 @@ public class UserServiceImpl implements UserService {
             user.setContactNumber(signupData.get("contactNumber"));
             user.setRole("user");
             user.setStatus("true");
-            
+
             userDao.save(user);
-            
-            // Delete signup data from Redis
             redisTemplate.delete(redisKey);
-            
-            return TaphoaUtils.getResponseEntity("Đăng ký thành công", HttpStatus.OK);
+
+            return ResponseEntity.ok(Map.of("message", "Đăng ký thành công"));
         } catch (Exception e) {
             log.error("Exception while verifying OTP", e);
-            return TaphoaUtils.getResponseEntity("Exception while verifying OTP", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Exception while verifying OTP"));
         }
     }
+
 
     @Override
     public ResponseEntity<String> resendOTP(Map<String, String> requestMap) {

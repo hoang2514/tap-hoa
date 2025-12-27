@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Stream;
 
+import com.inn.service.CartService;
 import org.apache.pdfbox.io.IOUtils;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ public class BillServiceImpl implements BillService {
 
     @Autowired
     ProductDao productDao;
+
+    @Autowired
+    private CartService cartService;
 
     @Override
     public String createOrder(int total, String orderInfor, String urlReturn){
@@ -154,65 +158,124 @@ public class BillServiceImpl implements BillService {
     }
 
     @Override
-    public ResponseEntity<String> generateReport(Map<String, Object> requestMap) {
-        try{
-            String fileName;
-            if(validateRequestMap(requestMap)){
-                if(requestMap.containsKey("isGenerate") && !(Boolean)requestMap.get("isGenerate")){
-                    fileName = (String)requestMap.get("uuid");
-                }else{
-                    // Kiểm tra số lượng mặt hàng trước khi tạo đơn hàng
-                    String stockCheckResult = validateProductStock((String)requestMap.get("productDetails"));
-                    if (stockCheckResult != null) {
-                        return TaphoaUtils.getResponseEntity(stockCheckResult, HttpStatus.BAD_REQUEST);
-                    }
-
-                    fileName = TaphoaUtils.getUUID();
-                    requestMap.put("uuid", fileName);
-                    insertBill(requestMap);
-                }
-                String data = "Name:" + requestMap.get("name") + "\n" +
-                        "Contact Number:" + requestMap.get("contactNumber") + "\n" +
-                        "Email:" + requestMap.get("email") + "\n" +
-                        "Payment Method:" + requestMap.get("paymentMethod");
-
-                Document document = new Document();
-                PdfWriter.getInstance(document, new FileOutputStream(TaphoaConstants.STORE_LOCATION + "\\" + fileName + ".pdf"));
-                document.open();
-                setRectangleInPdf(document);
-
-                Paragraph chunk = new Paragraph("Taphoa Management System", getFont("Header"));
-                chunk.setAlignment(Element.ALIGN_CENTER);
-                document.add(chunk);
-
-                Paragraph paragraph = new Paragraph(data+"\n \n", getFont("Data"));
-                document.add(paragraph);
-
-                PdfPTable table = new PdfPTable(5);
-                table.setWidthPercentage(100);
-                addTableHeader(table);
-
-                JSONArray jsonArray = TaphoaUtils.getJsonArrayFromString((String)requestMap.get("productDetails"));
-                for(int i = 0; i < jsonArray.length(); i++){
-                    addRows(table, TaphoaUtils.getMapFromJson(jsonArray.getString(i)));
-                }
-                document.add(table);
-
-                Paragraph footer = new Paragraph("Total: "+requestMap.get("totalAmount")+"\n"
-                        + "Thank you for visiting. Please visit again!!", getFont("Data"));
-                document.add(footer);
-                document.close();
-                return new ResponseEntity<>("{\"uuid\":\"" + fileName + "\"}", HttpStatus.OK);
+    public ResponseEntity<?> generateReport(Map<String, Object> requestMap) {
+        try {
+            if (!validateRequestMap(requestMap)) {
+                return ResponseEntity.badRequest().body(
+                        Map.of("message", "Thiếu dữ liệu bắt buộc")
+                );
             }
-            return TaphoaUtils.getResponseEntity("Required data not found", HttpStatus.BAD_REQUEST);
 
-        }catch(Exception ex){
-            ex.printStackTrace();
+            String fileName;
+
+            if (requestMap.containsKey("isGenerate")
+                    && Boolean.FALSE.equals(requestMap.get("isGenerate"))) {
+
+                if (!requestMap.containsKey("uuid")) {
+                    return ResponseEntity.badRequest().body(
+                            Map.of("message", "Thiếu UUID")
+                    );
+                }
+
+                fileName = requestMap.get("uuid").toString();
+
+            } else {
+                if (!requestMap.containsKey("productDetails")) {
+                    return ResponseEntity.badRequest().body(
+                            Map.of("message", "Thiếu danh sách sản phẩm")
+                    );
+                }
+
+                ResponseEntity<?> stockError =
+                        validateProductStock(requestMap.get("productDetails").toString());
+
+                if (stockError != null) {
+                    return stockError;
+                }
+
+                if (stockError != null) {
+                    return ResponseEntity.badRequest().body(
+                            Map.of("message", stockError)
+                    );
+                }
+
+                fileName = TaphoaUtils.getUUID();
+                requestMap.put("uuid", fileName);
+
+                try {
+                    insertBill(requestMap);
+                } catch (Exception e) {
+                    log.error("Insert bill failed", e);
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                            Map.of("message", "Không thể tạo hoá đơn")
+                    );
+                }
+            }
+
+            Document document = new Document();
+            PdfWriter.getInstance(
+                    document,
+                    new FileOutputStream(
+                            TaphoaConstants.STORE_LOCATION + "\\" + fileName + ".pdf"
+                    )
+            );
+
+            document.open();
+            setRectangleInPdf(document);
+
+            Paragraph header = new Paragraph(
+                    "Taphoa Management System",
+                    getFont("Header")
+            );
+            header.setAlignment(Element.ALIGN_CENTER);
+            document.add(header);
+
+            String data =
+                    "Name:" + requestMap.get("name") + "\n" +
+                            "Contact Number:" + requestMap.get("contactNumber") + "\n" +
+                            "Email:" + requestMap.get("email") + "\n" +
+                            "Payment Method:" + requestMap.get("paymentMethod");
+
+            document.add(new Paragraph(data + "\n\n", getFont("Data")));
+
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            addTableHeader(table);
+
+            JSONArray jsonArray = TaphoaUtils.getJsonArrayFromString(
+                    requestMap.get("productDetails").toString()
+            );
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                addRows(
+                        table,
+                        TaphoaUtils.getMapFromJson(jsonArray.getString(i))
+                );
+            }
+
+            document.add(table);
+
+            document.add(
+                    new Paragraph(
+                            "Total: " + requestMap.get("totalAmount")
+                                    + "\nThank you for visiting. Please visit again!!",
+                            getFont("Data")
+                    )
+            );
+
+            document.close();
+
+            return ResponseEntity.ok(
+                    Map.of("uuid", fileName)
+            );
+
+        } catch (Exception ex) {
+            log.error("Generate report error", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    Map.of("message", "Lỗi tạo hoá đơn")
+            );
         }
-
-        return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
 
     private void addRows(PdfPTable table, Map<String,Object> data) {
         table.addCell((String) data.get("name"));
@@ -221,8 +284,6 @@ public class BillServiceImpl implements BillService {
         table.addCell(Double.toString((Double) data.get("price")));
         table.addCell(Double.toString((Double) data.get("total")));
     }
-
-
 
     private void addTableHeader(PdfPTable table) {
         Stream.of("Name", "Category", "Quantity", "Price", "Sub Total")
@@ -278,6 +339,7 @@ public class BillServiceImpl implements BillService {
             bill.setCreatedBy(jwtFilter.getCurrentUser());
             billDao.save(bill);
             deductProductStock((String)requestMap.get("productDetails")); // Giảm số lượng mặt hàng trong kho
+            cartService.clearCart();
         }catch(Exception ex){
             ex.printStackTrace();
         }
@@ -288,40 +350,81 @@ public class BillServiceImpl implements BillService {
      * Xác minh số lượng cho tất cả các mặt hàng trong đơn hàng
      * Thông báo lỗi nếu không có đủ hàng, null nếu tất cả các mặt hàng đều đủ
      **/
-    private String validateProductStock(String productDetailsJson) {
+    private ResponseEntity<?> validateProductStock(String productDetailsJson) {
         try {
             JSONArray jsonArray = TaphoaUtils.getJsonArrayFromString(productDetailsJson);
+
             for (int i = 0; i < jsonArray.length(); i++) {
-                Map<String, Object> productData = TaphoaUtils.getMapFromJson(jsonArray.getString(i));
-                Integer productId = ((Number) productData.get("id")).intValue();
-                Integer requestedQuantity = ((Number) productData.get("quantity")).intValue();
+                Map<String, Object> productData =
+                        TaphoaUtils.getMapFromJson(jsonArray.getString(i));
+
+                log.info("ProductData = {}", productData);
+
+                Object idObj = productData.get("id");
+                Object qtyObj = productData.get("quantity");
+
+                if (idObj == null || qtyObj == null) {
+                    return ResponseEntity.badRequest().body(
+                            Map.of("message", "Dữ liệu sản phẩm không hợp lệ")
+                    );
+                }
+
+                Integer productId = (idObj instanceof Number)
+                        ? ((Number) idObj).intValue()
+                        : Integer.parseInt(idObj.toString());
+
+                Integer requestedQuantity = (qtyObj instanceof Number)
+                        ? ((Number) qtyObj).intValue()
+                        : Integer.parseInt(qtyObj.toString());
 
                 Optional<Product> productOpt = productDao.findById(productId);
                 if (productOpt.isEmpty()) {
-                    return "Product with ID " + productId + " not found";
+                    return ResponseEntity.badRequest().body(
+                            Map.of("message", "Sản phẩm không tồn tại", "productId", productId)
+                    );
                 }
 
                 Product product = productOpt.get();
+
                 if (product.getQuantity() == null || product.getQuantity() < requestedQuantity) {
-                    return "Insufficient stock for product: " + product.getName() +
-                            ". Requested: " + requestedQuantity + ", Available: " + (product.getQuantity() != null ? product.getQuantity() : 0);
+                    return ResponseEntity.badRequest().body(
+                            Map.of(
+                                    "message", "Số lượng vượt quá tồn kho",
+                                    "productId", productId,
+                                    "available", product.getQuantity() != null ? product.getQuantity() : 0
+                            )
+                    );
                 }
             }
             return null;
+
         } catch (Exception ex) {
             log.error("Error validating product stock", ex);
-            return "Error validating stock availability";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    Map.of("message", "Lỗi kiểm tra tồn kho")
+            );
         }
     }
+
 
     //Trừ vào số lượng mặt hàng trong kho sau khi thanh toán thành công
     private void deductProductStock(String productDetailsJson) {
         try {
             JSONArray jsonArray = TaphoaUtils.getJsonArrayFromString(productDetailsJson);
+
             for (int i = 0; i < jsonArray.length(); i++) {
                 Map<String, Object> productData = TaphoaUtils.getMapFromJson(jsonArray.getString(i));
-                Integer productId = ((Number) productData.get("id")).intValue();
-                Integer quantity = ((Number) productData.get("quantity")).intValue();
+
+                Object idObj = productData.get("id");
+                Object qtyObj = productData.get("quantity");
+
+                Integer productId = (idObj instanceof Number)
+                        ? ((Number) idObj).intValue()
+                        : Integer.parseInt(idObj.toString());
+
+                Integer quantity = (qtyObj instanceof Number)
+                        ? ((Number) qtyObj).intValue()
+                        : Integer.parseInt(qtyObj.toString());
 
                 Optional<Product> productOpt = productDao.findById(productId);
                 if (productOpt.isPresent()) {
@@ -337,6 +440,7 @@ public class BillServiceImpl implements BillService {
             log.error("Error deducting product stock", ex);
         }
     }
+
 
     private boolean validateRequestMap(Map<String,Object> requestMap) {
         return requestMap.containsKey("name") && requestMap.containsKey("contactNumber")

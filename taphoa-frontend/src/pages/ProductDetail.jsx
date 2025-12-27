@@ -80,6 +80,9 @@ export default function ProductDetail() {
           <div className="muted small" style={{ marginBottom: 10 }}>
             {product.categoryName ? `Danh mục: ${product.categoryName}` : ''}
           </div>
+          <div style={{ marginBottom: 10, fontWeight: 600, color: product.quantity > 0 ? '#28a745' : '#dc3545' }}>
+              Còn lại: {product.quantity} sản phẩm
+          </div>
           <div style={{ marginBottom: 10 }}>{product.description}</div>
           <div style={{ fontWeight: 800, marginBottom: 14 }}>{Number(product.price).toLocaleString('vi-VN')} ₫</div>
 
@@ -98,9 +101,7 @@ export default function ProductDetail() {
     type="number"
     min={1}
     value={qty}
-    onChange={(e) =>
-      setQty(Math.max(1, Number(e.target.value) || 1))
-    }
+    onChange={(e) => setQty(Number(e.target.value) || 1)}
     style={{ width: 80, textAlign: 'center', margin: '0 8px' }}
   />
 
@@ -114,21 +115,24 @@ export default function ProductDetail() {
 
 
           <button
-            className="btn primary"
-            onClick={async () => {
-              try {
-                await cart.add(product.id, qty);
-
-
-                setMsg('Đã thêm vào giỏ hàng');
-                setTimeout(() => setMsg(''), 1200);
-              } catch (e) {
-                setErr(e.message || 'Không thể thêm vào giỏ hàng');
-              }
-            }}
-          >
-            Thêm vào giỏ hàng
-          </button>
+                      className="btn primary"
+                      onClick={async () => {
+                        if (qty > product.quantity) {
+                          setErr(`Không đủ hàng (Chỉ còn ${product.quantity} sản phẩm)`);
+                          return;
+                        }
+                        try {
+                          await cart.add(product.id, qty);
+                          setMsg('Đã thêm vào giỏ hàng');
+                          setErr('');
+                          setTimeout(() => setMsg(''), 1200);
+                        } catch (e) {
+                          setErr(e.message);
+                        }
+                      }}
+                    >
+                      Thêm vào giỏ hàng
+                    </button>
         </>
       ) : null}
     </div>

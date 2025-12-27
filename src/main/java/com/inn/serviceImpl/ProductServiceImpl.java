@@ -71,6 +71,7 @@ public class ProductServiceImpl implements ProductService {
         if (requestMap.containsKey("imageUrl")) {
             product.setImageUrl(requestMap.get("imageUrl"));
         }
+        product.setQuantity(Integer.parseInt(requestMap.get("quantity")));
         return product;
     }
 
@@ -199,5 +200,13 @@ public class ProductServiceImpl implements ProductService {
             ex.printStackTrace();
         }
         return new ProductWrapper();
+
+
+    }
+
+    @Override
+    public ResponseEntity<Integer> getStockById(Integer id) {
+        Integer stock = productDao.getStockById(id);
+        return new ResponseEntity<>(stock, HttpStatus.OK);
     }
 }
