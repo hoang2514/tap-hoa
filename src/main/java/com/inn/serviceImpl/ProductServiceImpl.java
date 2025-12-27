@@ -14,8 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.inn.JWT.JwtFilter;
-import com.inn.POJO.Product;
 import com.inn.POJO.Category;
+import com.inn.POJO.Product;
 import com.inn.constants.TaphoaConstants;
 import com.inn.dao.ProductDao;
 import com.inn.service.ProductService;
@@ -68,6 +68,9 @@ public class ProductServiceImpl implements ProductService {
         product.setDescription(requestMap.get("description"));
         product.setPrice(Float.parseFloat(requestMap.get("price")));
         product.setQuantity(Integer.parseInt(requestMap.get("quantity")));
+        if (requestMap.containsKey("imageUrl")) {
+            product.setImageUrl(requestMap.get("imageUrl"));
+        }
         return product;
     }
 

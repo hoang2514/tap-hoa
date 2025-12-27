@@ -1,17 +1,15 @@
 package com.inn.utils;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-@Service
+@Component
 public class EmailUtils {
 
     @Autowired
-    private JavaMailSender emailSender;
+    private JavaMailSender mailSender;
 
     public void sendOldPasswordEmail(String email, String password){
         SimpleMailMessage message = new SimpleMailMessage();
@@ -20,26 +18,16 @@ public class EmailUtils {
         message.setSubject("Old password");
         message.setText("Old password: " + password);
 
-        emailSender.send(message);
+        mailSender.send(message);
     }
 
-    public void sendSimpleMessage(String to, String subject, String text, List<String> list) {
+    public void sendOTPEmail(String email, String otp){
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("nguyenlequochung3011@gmail.com");
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
-        if (list != null && list.size() > 0) {
-            message.setCc(getCcArray(list));
-        }
-        emailSender.send(message);
-    }
+        message.setTo(email);
+        message.setSubject("Mã OTP đăng ký tài khoản");
+        message.setText("Mã OTP của bạn là: " + otp + "\n\nMã này có hiệu lực trong 30 giây.");
 
-    private String[] getCcArray(List<String> ccList) {
-        String[] cc = new String[ccList.size()];
-        for (int i = 0; i < ccList.size(); i++) {
-            cc[i] = ccList.get(i);
-        }
-        return cc;
+        mailSender.send(message);
     }
 }
