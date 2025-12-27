@@ -76,15 +76,13 @@ export default function Checkout() {
     setLoading(true)
 
     try {
-      // ===== ĐÚNG THEO BE: /bill/generateReport nhận JSON Map =====
       const payload = {
         name,
         contactNumber,
         email: auth.email,
         paymentMethod,          // "CASH" hoặc "VNPAY"
-        productDetails,         // STRING JSON ARRAY
+        productDetails,
         totalAmount: String(totalAmount)
-        // isGenerate: true  // không bắt buộc; BE tự generate nếu thiếu
       }
 
       const res = await api.post('/bill/generateReport', payload)
@@ -99,7 +97,6 @@ export default function Checkout() {
       setSuccess('Tạo hóa đơn thành công.')
 
       if (paymentMethod === 'VNPAY') {
-        // ===== ĐÚNG THEO BE: /bill/submitOrder nhận form-data kiểu requestParam =====
         const form = vnpayFormRef.current
         form.elements.amount.value = String(totalAmount)
         form.elements.orderInfo.value = obj.uuid
@@ -156,7 +153,6 @@ export default function Checkout() {
             {loading && <Loader />}
           </form>
 
-          {/* VNPay form – submit HTML theo đúng BE */}
           <form
             ref={vnpayFormRef}
             method="POST"
