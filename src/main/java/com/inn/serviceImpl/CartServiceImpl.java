@@ -73,6 +73,12 @@ public class CartServiceImpl implements CartService {
                         .body(Map.of("message", "Hết hàng."));
             }
 
+            // Kiểm tra số lượng hàng trong kho
+            Product product = productOpt.get();
+            if (product.getQuantity() == null || product.getQuantity() <= 0) {
+                return TaphoaUtils.getResponseEntity("Product out of stock", HttpStatus.BAD_REQUEST);
+            }
+
             CartItem existing = cartItemDao.findByUserEmailAndProduct_Id(currentUser, productId);
             if (existing != null) {
                 Integer newQuantity = existing.getQuantity() + quantity;

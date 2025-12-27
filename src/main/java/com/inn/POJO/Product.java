@@ -53,6 +53,9 @@ public class Product implements Serializable {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "quantity")
+    private Integer quantity;
+
     @Column(name = "image_url")
     private String imageUrl;
 

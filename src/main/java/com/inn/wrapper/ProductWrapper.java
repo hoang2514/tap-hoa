@@ -14,6 +14,7 @@ public class ProductWrapper implements Serializable {
     String status;
     Integer categoryId;
     String categoryName;
+    Integer quantity;
     String imageUrl;
     Integer quantity;
 
