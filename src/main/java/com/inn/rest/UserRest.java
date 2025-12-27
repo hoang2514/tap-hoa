@@ -15,7 +15,7 @@ public interface UserRest {
     public ResponseEntity<String> signUp(@RequestBody (required=true) Map<String, String> requestMap);
 
     @PostMapping(path = "/verifyOTP")
-    public ResponseEntity<String> verifyOTP(@RequestBody (required=true) Map<String, String> requestMap);
+    public ResponseEntity<?> verifyOTP(@RequestBody (required=true) Map<String, String> requestMap);
 
     @PostMapping(path = "/resendOTP")
     public ResponseEntity<String> resendOTP(@RequestBody (required=true) Map<String, String> requestMap);

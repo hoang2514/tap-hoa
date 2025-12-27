@@ -22,18 +22,23 @@ public class CartRestImpl implements CartRest {
     }
 
     @Override
-    public ResponseEntity<String> addToCart(Map<String, Object> requestMap) {
+    public ResponseEntity<?> addToCart(Map<String, Object> requestMap) {
         return cartService.addToCart(requestMap);
     }
 
     @Override
-    public ResponseEntity<String> updateCartItem(Integer cartItemId, Map<String, Object> requestMap) {
+    public ResponseEntity<?> updateCartItem(Integer cartItemId, Map<String, Object> requestMap) {
         return cartService.updateCartItem(cartItemId, requestMap);
     }
 
     @Override
     public ResponseEntity<String> deleteCartItem(Integer cartItemId) {
         return cartService.deleteCartItem(cartItemId);
+    }
+
+    @Override
+    public ResponseEntity<?> clearCart() {
+        return cartService.clearCart();
     }
 }
 

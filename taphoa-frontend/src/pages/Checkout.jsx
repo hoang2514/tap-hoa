@@ -21,6 +21,7 @@ function buildProductDetails(items) {
       const price = Number(it.price) || 0
       const quantity = Number(it.quantity) || 0
       return {
+          id: it.productId,
         name: String(it.productName || ''),
         category: String(it.categoryName || ''),
         quantity: String(quantity),

@@ -45,44 +45,72 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public ResponseEntity<String> addToCart(Map<String, Object> requestMap) {
+    public ResponseEntity<?> addToCart(Map<String, Object> requestMap) {
         try {
             if (!isAuthenticatedUser()) {
-                return TaphoaUtils.getResponseEntity(TaphoaConstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", TaphoaConstants.UNAUTHORIZED_ACCESS));
             }
+
             String currentUser = jwtFilter.getCurrentUser();
             Integer productId = parseInteger(requestMap.get("productId"));
             Integer quantity = parseInteger(requestMap.getOrDefault("quantity", 1));
 
             if (productId == null || quantity == null || quantity <= 0) {
-                return TaphoaUtils.getResponseEntity(TaphoaConstants.INVALID_DATA, HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", TaphoaConstants.INVALID_DATA));
             }
 
             Optional<Product> productOpt = productDao.findById(productId);
             if (productOpt.isEmpty() || !"true".equalsIgnoreCase(productOpt.get().getStatus())) {
-                return TaphoaUtils.getResponseEntity("Product not available", HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Sản phẩm không tồn tại."));
+            }
+
+            Product product = productOpt.get();
+            if (product.getQuantity() == null || product.getQuantity() <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Hết hàng."));
             }
 
             CartItem existing = cartItemDao.findByUserEmailAndProduct_Id(currentUser, productId);
             if (existing != null) {
-                existing.setQuantity(existing.getQuantity() + quantity);
+                Integer newQuantity = existing.getQuantity() + quantity;
+                if (newQuantity > product.getQuantity()) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of(
+                                    "message", "Số lượng vượt quá tồn kho.",
+                                    "available", product.getQuantity()
+                            ));
+                }
+                existing.setQuantity(newQuantity);
                 cartItemDao.save(existing);
             } else {
+                if (quantity > product.getQuantity()) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of(
+                                    "message", "Số lượng vượt quá tồn kho.",
+                                    "available", product.getQuantity()
+                            ));
+                }
                 CartItem cartItem = new CartItem();
                 cartItem.setUserEmail(currentUser);
-                cartItem.setProduct(productOpt.get());
+                cartItem.setProduct(product);
                 cartItem.setQuantity(quantity);
                 cartItemDao.save(cartItem);
             }
-            return TaphoaUtils.getResponseEntity("Added to cart", HttpStatus.OK);
+
+            return ResponseEntity.ok(Map.of("message", "Đã thêm vào giỏ."));
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", TaphoaConstants.Something_Went_Wrong));
     }
 
+
     @Override
-    public ResponseEntity<String> updateCartItem(Integer cartItemId, Map<String, Object> requestMap) {
+    public ResponseEntity<?> updateCartItem(Integer cartItemId, Map<String, Object> requestMap) {
         try {
             if (!isAuthenticatedUser()) {
                 return TaphoaUtils.getResponseEntity(TaphoaConstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
@@ -97,6 +125,17 @@ public class CartServiceImpl implements CartService {
                 return TaphoaUtils.getResponseEntity("Cart item not found", HttpStatus.NOT_FOUND);
             }
             CartItem cartItem = cartItemOpt.get();
+            Product product = cartItem.getProduct();
+
+            // Kiểm tra số lượng hàng trong kho
+            if (product.getQuantity() == null || quantity > product.getQuantity()) {
+                return ResponseEntity.badRequest().body(
+                        Map.of(
+                                "message", "Số lượng vượt quá tồn kho",
+                                "available", product.getQuantity()
+                        )
+                );
+            }
             cartItem.setQuantity(quantity);
             cartItemDao.save(cartItem);
             return TaphoaUtils.getResponseEntity("Cart item updated", HttpStatus.OK);
@@ -124,6 +163,30 @@ public class CartServiceImpl implements CartService {
         }
         return TaphoaUtils.getResponseEntity(TaphoaConstants.Something_Went_Wrong, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @Override
+    public ResponseEntity<?> clearCart() {
+        try {
+            if (!isAuthenticatedUser()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", TaphoaConstants.UNAUTHORIZED_ACCESS));
+            }
+
+            String currentUser = jwtFilter.getCurrentUser();
+            List<CartItemWrapper> items = cartItemDao.getItemsForUser(currentUser);
+
+            if (!items.isEmpty()) {
+                items.forEach(wrapper -> cartItemDao.deleteById(wrapper.getCartItemId()));
+            }
+
+            return ResponseEntity.ok(Map.of("message", "Đã xoá toàn bộ giỏ hàng"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", TaphoaConstants.Something_Went_Wrong));
+        }
+    }
+
 
     private Integer parseInteger(Object value) {
         try {

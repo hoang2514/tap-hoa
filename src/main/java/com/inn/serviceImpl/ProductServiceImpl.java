@@ -70,11 +70,12 @@ public class ProductServiceImpl implements ProductService {
         if (requestMap.containsKey("imageUrl")) {
             product.setImageUrl(requestMap.get("imageUrl"));
         }
+        product.setQuantity(Integer.parseInt(requestMap.get("quantity")));
         return product;
     }
 
     private boolean validateProductMap(Map<String,String> requestMap, boolean validateId) {
-        if (requestMap.containsKey("name")) {
+        if (requestMap.containsKey("name") && requestMap.containsKey("quantity")) {
             if (requestMap.containsKey("id") && validateId) {
                 return true;
             }
@@ -198,5 +199,13 @@ public class ProductServiceImpl implements ProductService {
             ex.printStackTrace();
         }
         return new ProductWrapper();
+
+
+    }
+
+    @Override
+    public ResponseEntity<Integer> getStockById(Integer id) {
+        Integer stock = productDao.getStockById(id);
+        return new ResponseEntity<>(stock, HttpStatus.OK);
     }
 }
