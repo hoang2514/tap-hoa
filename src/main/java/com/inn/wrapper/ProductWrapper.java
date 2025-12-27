@@ -14,6 +14,7 @@ public class ProductWrapper implements Serializable {
     String status;
     Integer categoryId;
     String categoryName;
+    Integer quantity;
     String imageUrl;
 
     public ProductWrapper() {
@@ -32,7 +33,15 @@ public class ProductWrapper implements Serializable {
         this.price = price;
     }
 
-    public ProductWrapper(Integer id, String name, String description, Float price, String status, Integer categoryId, String categoryName, String imageUrl) {
+    public ProductWrapper(Integer id, String name, String description, Float price, Integer quantity) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.quantity = quantity;
+    }
+
+    public ProductWrapper(Integer id, String name, String description, Float price, String status, Integer categoryId, String categoryName, Integer quantity, String imageUrl) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -41,5 +50,6 @@ public class ProductWrapper implements Serializable {
         this.imageUrl = imageUrl;
         this.categoryId = categoryId;
         this.categoryName = categoryName;
+        this.quantity = quantity;
     }
 }

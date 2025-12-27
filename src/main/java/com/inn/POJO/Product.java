@@ -18,10 +18,10 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @NamedQuery(name = "Product.getAllProduct", query =
-        "SELECT NEW com.inn.wrapper.ProductWrapper(p.id, p.name, p.description, p.price, p.status, p.category.id, p.category.name, p.imageUrl) FROM Product p ")
+        "SELECT NEW com.inn.wrapper.ProductWrapper(p.id, p.name, p.description, p.price, p.status, p.quantity, p.category.id, p.category.name, p.imageUrl) FROM Product p ")
 @NamedQuery(name = "Product.updateProductStatus", query = "update Product p set p.status=:status where p.id=:id")
 @NamedQuery(name = "Product.getProductByCategory", query = "select new com.inn.wrapper.ProductWrapper(p.id,p.name) from Product p where p.category.id=:id and p.status='true'")
-@NamedQuery(name = "Product.getProductById", query = "select new com.inn.wrapper.ProductWrapper(p.id, p.name, p.description, p.price, p.status, p.category.id, p.category.name, p.imageUrl) from Product p where p.id=:id")
+@NamedQuery(name = "Product.getProductById", query = "select new com.inn.wrapper.ProductWrapper(p.id, p.name, p.description, p.price, p.status, p.quantity, p.category.id, p.category.name, p.imageUrl) from Product p where p.id=:id")
 
 @Data
 @Entity
@@ -51,6 +51,9 @@ public class Product implements Serializable {
 
     @Column(name = "status")
     private String status;
+
+    @Column(name = "quantity")
+    private Integer quantity;
 
     @Column(name = "image_url")
     private String imageUrl;

@@ -17,8 +17,10 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.inn.JWT.JwtFilter;
 import com.inn.POJO.Bill;
+import com.inn.POJO.Product;
 import com.inn.constants.TaphoaConstants;
 import com.inn.dao.BillDao;
+import com.inn.dao.ProductDao;
 import com.inn.service.BillService;
 import com.inn.utils.TaphoaUtils;
 
@@ -41,6 +43,9 @@ public class BillServiceImpl implements BillService {
 
     @Autowired
     BillDao billDao;
+
+    @Autowired
+    ProductDao productDao;
 
     @Override
     public String createOrder(int total, String orderInfor, String urlReturn){
@@ -156,6 +161,12 @@ public class BillServiceImpl implements BillService {
                 if(requestMap.containsKey("isGenerate") && !(Boolean)requestMap.get("isGenerate")){
                     fileName = (String)requestMap.get("uuid");
                 }else{
+                    // Kiểm tra số lượng mặt hàng trước khi tạo đơn hàng
+                    String stockCheckResult = validateProductStock((String)requestMap.get("productDetails"));
+                    if (stockCheckResult != null) {
+                        return TaphoaUtils.getResponseEntity(stockCheckResult, HttpStatus.BAD_REQUEST);
+                    }
+
                     fileName = TaphoaUtils.getUUID();
                     requestMap.put("uuid", fileName);
                     insertBill(requestMap);
@@ -266,10 +277,65 @@ public class BillServiceImpl implements BillService {
             bill.setProductDetail((String)requestMap.get("productDetails"));
             bill.setCreatedBy(jwtFilter.getCurrentUser());
             billDao.save(bill);
+            deductProductStock((String)requestMap.get("productDetails")); // Giảm số lượng mặt hàng trong kho
         }catch(Exception ex){
             ex.printStackTrace();
         }
 
+    }
+
+    /**
+     * Xác minh số lượng cho tất cả các mặt hàng trong đơn hàng
+     * Thông báo lỗi nếu không có đủ hàng, null nếu tất cả các mặt hàng đều đủ
+     **/
+    private String validateProductStock(String productDetailsJson) {
+        try {
+            JSONArray jsonArray = TaphoaUtils.getJsonArrayFromString(productDetailsJson);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                Map<String, Object> productData = TaphoaUtils.getMapFromJson(jsonArray.getString(i));
+                Integer productId = ((Number) productData.get("id")).intValue();
+                Integer requestedQuantity = ((Number) productData.get("quantity")).intValue();
+
+                Optional<Product> productOpt = productDao.findById(productId);
+                if (productOpt.isEmpty()) {
+                    return "Product with ID " + productId + " not found";
+                }
+
+                Product product = productOpt.get();
+                if (product.getQuantity() == null || product.getQuantity() < requestedQuantity) {
+                    return "Insufficient stock for product: " + product.getName() +
+                            ". Requested: " + requestedQuantity + ", Available: " + (product.getQuantity() != null ? product.getQuantity() : 0);
+                }
+            }
+            return null;
+        } catch (Exception ex) {
+            log.error("Error validating product stock", ex);
+            return "Error validating stock availability";
+        }
+    }
+
+    //Trừ vào số lượng mặt hàng trong kho sau khi thanh toán thành công
+    private void deductProductStock(String productDetailsJson) {
+        try {
+            JSONArray jsonArray = TaphoaUtils.getJsonArrayFromString(productDetailsJson);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                Map<String, Object> productData = TaphoaUtils.getMapFromJson(jsonArray.getString(i));
+                Integer productId = ((Number) productData.get("id")).intValue();
+                Integer quantity = ((Number) productData.get("quantity")).intValue();
+
+                Optional<Product> productOpt = productDao.findById(productId);
+                if (productOpt.isPresent()) {
+                    Product product = productOpt.get();
+                    if (product.getQuantity() != null) {
+                        product.setQuantity(product.getQuantity() - quantity);
+                        productDao.save(product);
+                        log.info("Product {} stock reduced by {}. New stock: {}", productId, quantity, product.getQuantity());
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Error deducting product stock", ex);
+        }
     }
 
     private boolean validateRequestMap(Map<String,Object> requestMap) {
