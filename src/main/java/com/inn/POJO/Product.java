@@ -58,7 +58,4 @@ public class Product implements Serializable {
 
     @Column(name = "image_url")
     private String imageUrl;
-
-    @Column(name = "quantity")
-    private Integer quantity;
 }
