@@ -19,10 +19,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -45,55 +47,36 @@ public class UserServiceImpl implements UserService {
     JwtUtil jwtUtil;
 
     @Autowired
-    JwtFilter jwtFilter;
+    RedisTemplate<String, String> redisTemplate;
 
     @Autowired
-    RedisTemplate<String, String> redisTemplate;
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public ResponseEntity<String> signUp(Map<String, String> requestMap) {
-        try{
-            if(validateSignUpMap(requestMap)) {
-                // Find user information in database using DAO
+        try {
+            if (validateSignUpMap(requestMap)) {
                 User user = userDao.findByEmail(requestMap.get("email"));
                 if (Objects.isNull(user)) {
-                    // Generate OTP
                     String otp = OtpUtils.generateOTP();
                     String email = requestMap.get("email");
-                    
-                    // Store user data temporarily in Redis with OTP
-                    Map<String, String> signupData = new HashMap<>();
-                    signupData.put("email", requestMap.get("email"));
-                    signupData.put("password", requestMap.get("password"));
-                    signupData.put("name", requestMap.get("name"));
-                    signupData.put("contactNumber", requestMap.get("contactNumber"));
+
+                    Map<String, String> signupData = new HashMap<>(requestMap);
                     signupData.put("otp", otp);
                     signupData.put("otpTimestamp", String.valueOf(System.currentTimeMillis()));
-                    
-                    Gson gson = new Gson();
-                    String signupDataJson = gson.toJson(signupData);
-                    
-                    // Store in Redis with 5 minutes expiration (allows multiple OTP resends)
-                    // Each OTP is valid for 30 seconds, but signup data stays for 5 minutes
+
                     String redisKey = "signup:" + email;
-                    redisTemplate.opsForValue().set(redisKey, signupDataJson, 5, TimeUnit.MINUTES);
-                    
-                    // Send OTP email
+                    redisTemplate.opsForValue().set(redisKey, new Gson().toJson(signupData), 5, TimeUnit.MINUTES);
+
                     emailUtils.sendOTPEmail(email, otp);
-                    
-                    return TaphoaUtils.getResponseEntity("OTP đã được gửi đến email của bạn. Vui lòng kiểm tra email và nhập mã OTP.", HttpStatus.OK);
+                    return TaphoaUtils.getResponseEntity("OTP đã được gửi đến email.", HttpStatus.OK);
                 }
-                else {
-                    return TaphoaUtils.getResponseEntity("User already exists", HttpStatus.BAD_REQUEST);
-                }
+                return TaphoaUtils.getResponseEntity("User already exists", HttpStatus.BAD_REQUEST);
             }
-            else {
-                return TaphoaUtils.getResponseEntity("Error signing up user", HttpStatus.BAD_REQUEST);
-            }
-        }
-        catch (Exception e){
-            log.error("Exception while signing up", e);
-            return TaphoaUtils.getResponseEntity("Exception while signing up", HttpStatus.INTERNAL_SERVER_ERROR);
+            return TaphoaUtils.getResponseEntity("Invalid data", HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            log.error("SignUp error", e);
+            return TaphoaUtils.getResponseEntity("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -102,60 +85,40 @@ public class UserServiceImpl implements UserService {
         try {
             String email = requestMap.get("email");
             String otp = requestMap.get("otp");
-
-            if (email == null || otp == null) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "Email và OTP là bắt buộc"));
-            }
-
             String redisKey = "signup:" + email;
             String signupDataJson = redisTemplate.opsForValue().get(redisKey);
 
             if (signupDataJson == null) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "OTP đã hết hạn hoặc không tồn tại. Vui lòng gửi lại mã OTP."));
+                return ResponseEntity.badRequest().body(Map.of("message", "OTP hết hạn hoặc không tồn tại."));
             }
 
-            Gson gson = new Gson();
-            Map<String, String> signupData = gson.fromJson(signupDataJson, new TypeToken<Map<String, String>>(){}.getType());
+            Map<String, String> signupData = new Gson().fromJson(signupDataJson, new TypeToken<Map<String, String>>(){}.getType());
 
             if (!otp.equals(signupData.get("otp"))) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "Mã OTP không đúng"));
+                return ResponseEntity.badRequest().body(Map.of("message", "Mã OTP không đúng"));
             }
 
-            String otpTimestampStr = signupData.get("otpTimestamp");
-            if (otpTimestampStr != null) {
-                try {
-                    long otpTimestamp = Long.parseLong(otpTimestampStr);
-                    long currentTime = System.currentTimeMillis();
-                    long elapsedSeconds = (currentTime - otpTimestamp) / 1000;
-
-                    if (elapsedSeconds > 30) {
-                        return ResponseEntity.badRequest()
-                                .body(Map.of("message", "Mã OTP đã hết hạn. Vui lòng gửi lại mã OTP."));
-                    }
-                } catch (NumberFormatException e) {
-                    log.error("Invalid OTP timestamp format", e);
-                }
+            long otpTimestamp = Long.parseLong(signupData.get("otpTimestamp"));
+            if ((System.currentTimeMillis() - otpTimestamp) / 1000 > 30) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Mã OTP đã hết hạn."));
             }
 
             User user = new User();
             user.setEmail(signupData.get("email"));
-            user.setPassword(signupData.get("password"));
             user.setName(signupData.get("name"));
             user.setContactNumber(signupData.get("contactNumber"));
             user.setRole("user");
             user.setStatus("true");
+            // Hash password trước khi lưu
+            user.setPassword(passwordEncoder.encode(signupData.get("password")));
 
             userDao.save(user);
             redisTemplate.delete(redisKey);
 
             return ResponseEntity.ok(Map.of("message", "Đăng ký thành công"));
         } catch (Exception e) {
-            log.error("Exception while verifying OTP", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Exception while verifying OTP"));
+            log.error("VerifyOTP error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error"));
         }
     }
 
@@ -164,45 +127,25 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<String> resendOTP(Map<String, String> requestMap) {
         try {
             String email = requestMap.get("email");
-            
-            if (email == null) {
-                return TaphoaUtils.getResponseEntity("Email là bắt buộc", HttpStatus.BAD_REQUEST);
-            }
-            
-            // Check if user already exists
-            User existingUser = userDao.findByEmail(email);
-            if (existingUser != null) {
-                return TaphoaUtils.getResponseEntity("User already exists", HttpStatus.BAD_REQUEST);
-            }
-            
-            // Get existing signup data from Redis
             String redisKey = "signup:" + email;
             String signupDataJson = redisTemplate.opsForValue().get(redisKey);
-            
+
             if (signupDataJson == null) {
-                return TaphoaUtils.getResponseEntity("Không tìm thấy thông tin đăng ký. Vui lòng đăng ký lại.", HttpStatus.BAD_REQUEST);
+                return TaphoaUtils.getResponseEntity("Không tìm thấy thông tin đăng ký.", HttpStatus.BAD_REQUEST);
             }
-            
-            // Parse existing signup data
-            Gson gson = new Gson();
-            Map<String, String> signupData = gson.fromJson(signupDataJson, new TypeToken<Map<String, String>>(){}.getType());
-            
-            // Generate new OTP
+
+            Map<String, String> signupData = new Gson().fromJson(signupDataJson, new TypeToken<Map<String, String>>(){}.getType());
             String newOtp = OtpUtils.generateOTP();
             signupData.put("otp", newOtp);
             signupData.put("otpTimestamp", String.valueOf(System.currentTimeMillis()));
-            
-            // Store updated data in Redis with 5 minutes expiration (reset timer)
-            String updatedSignupDataJson = gson.toJson(signupData);
-            redisTemplate.opsForValue().set(redisKey, updatedSignupDataJson, 5, TimeUnit.MINUTES);
-            
-            // Send new OTP email
+
+            redisTemplate.opsForValue().set(redisKey, new Gson().toJson(signupData), 5, TimeUnit.MINUTES);
             emailUtils.sendOTPEmail(email, newOtp);
-            
-            return TaphoaUtils.getResponseEntity("Mã OTP mới đã được gửi đến email của bạn. Vui lòng kiểm tra email.", HttpStatus.OK);
+
+            return TaphoaUtils.getResponseEntity("Mã OTP mới đã được gửi.", HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Exception while resending OTP", e);
-            return TaphoaUtils.getResponseEntity("Exception while resending OTP", HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("ResendOTP error", e);
+            return TaphoaUtils.getResponseEntity("Error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -210,18 +153,18 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<String> changePassword(Map<String, String> requestMap) {
         try {
             User user = userDao.findByEmail(requestMap.get("email"));
-            if (!Objects.isNull(user)) {
-                if (user.getPassword().equals(requestMap.get("oldPassword"))) {
-                    user.setPassword(requestMap.get("newPassword"));
+            if (user != null) {
+                // Kiểm tra password cũ bằng matches()
+                if (passwordEncoder.matches(requestMap.get("oldPassword"), user.getPassword())) {
+                    user.setPassword(passwordEncoder.encode(requestMap.get("newPassword")));
                     userDao.save(user);
                     return TaphoaUtils.getResponseEntity("Password changed successfully", HttpStatus.OK);
                 }
                 return TaphoaUtils.getResponseEntity("Old password does not match", HttpStatus.BAD_REQUEST);
             }
-            return TaphoaUtils.getResponseEntity("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        catch (Exception e) {
-            return TaphoaUtils.getResponseEntity("Exception while changing password", HttpStatus.INTERNAL_SERVER_ERROR);
+            return TaphoaUtils.getResponseEntity("User not found", HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return TaphoaUtils.getResponseEntity("Error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -229,13 +172,17 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<String> forgotPassword(Map<String, String> requestMap) {
         try {
             User user = userDao.findByEmail(requestMap.get("email"));
-            if (!Objects.isNull(user) && user.getEmail().equals(requestMap.get("email"))) {
-                emailUtils.sendOldPasswordEmail(user.getEmail(),user.getPassword());
+            if (user != null) {
+                // Tạo mật khẩu ngẫu nhiên 8 ký tự
+                String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+                user.setPassword(passwordEncoder.encode(tempPassword));
+                userDao.save(user);
+
+                emailUtils.sendOTPEmail(user.getEmail(), "Mật khẩu mới của bạn là: " + tempPassword);
             }
-            return TaphoaUtils.getResponseEntity("Check your email for password.", HttpStatus.OK);
-        }
-        catch (Exception e) {
-            return TaphoaUtils.getResponseEntity("Exception while forgot password", HttpStatus.INTERNAL_SERVER_ERROR);
+            return TaphoaUtils.getResponseEntity("Nếu email tồn tại, mật khẩu mới đã được gửi.", HttpStatus.OK);
+        } catch (Exception e) {
+            return TaphoaUtils.getResponseEntity("Error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -244,33 +191,22 @@ public class UserServiceImpl implements UserService {
         requestMap.containsKey("name") && requestMap.containsKey("contactNumber");
     }
 
-    private User getUserFromMap(Map<String, String> requestMap) {
-        User user = new User();
-        user.setEmail(requestMap.get("email"));
-        user.setPassword(requestMap.get("password"));
-        user.setName(requestMap.get("name"));
-        user.setContactNumber(requestMap.get("contactNumber"));
-        user.setRole("user");
-        return user;
-    }
-
     @Override
     public ResponseEntity<String> login(Map<String, String> requestMap) {
-        log.info("Inside login");
         try {
-            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(requestMap.get("email"), requestMap.get("password")));
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(requestMap.get("email"), requestMap.get("password"))
+            );
 
             if (auth.isAuthenticated()) {
-                if (customerUsersDetailsService.getUserDetail().getStatus() != null) {
-                    if (customerUsersDetailsService.getUserDetail().getStatus().equalsIgnoreCase("true")) {
-                        return new ResponseEntity<>("{\"token\":\"" + jwtUtil.generateToken(customerUsersDetailsService.getUserDetail().getEmail(), customerUsersDetailsService.getUserDetail().getRole()) + "\"}", HttpStatus.OK);
-                    }
-                } else {
-                    return new ResponseEntity<>("{\"message\":\"Wait for admin approval.\"}", HttpStatus.BAD_REQUEST);
+                User user = customerUsersDetailsService.getUserDetail();
+                if ("true".equalsIgnoreCase(user.getStatus())) {
+                    return new ResponseEntity<>("{\"token\":\"" + jwtUtil.generateToken(user.getEmail(), user.getRole()) + "\"}", HttpStatus.OK);
                 }
+                return new ResponseEntity<>("{\"message\":\"Wait for admin approval.\"}", HttpStatus.BAD_REQUEST);
             }
         } catch (Exception ex) {
-            log.error("Exception occurred while login", ex);
+            log.error("Login failed", ex);
         }
         return new ResponseEntity<>("{\"message\":\"Bad Credentials.\"}", HttpStatus.BAD_REQUEST);
     }
