@@ -34,7 +34,7 @@ public class ProductWrapper implements Serializable {
         this.quantity = quantity;
     }
 
-    public ProductWrapper(Integer id, String name, String description, Float price, String status, Integer quantity, Integer categoryId, String categoryName, String imageUrl) {
+    public ProductWrapper(Integer id, String name, String description, Float price, String status, Integer categoryId, String categoryName, String imageUrl, Integer quantity) {
         this.id = id;
         this.name = name;
         this.description = description;
