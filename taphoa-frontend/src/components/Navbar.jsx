@@ -18,7 +18,7 @@ export default function Navbar() {
             Tạp Hóa
           </Link>
           {auth.isAuthenticated ? (
-            <span className="badge">{auth.role}</span>
+            <span className="badge">{auth.email}</span>
           ) : null}
         </div>
 

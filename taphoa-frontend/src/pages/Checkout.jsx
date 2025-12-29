@@ -46,8 +46,7 @@ export default function Checkout() {
     [auth]
   )
 
-  const [name, setName] = useState('')
-  const [contactNumber, setContactNumber] = useState('')
+
   const [paymentMethod, setPaymentMethod] = useState('CASH')
 
   const [loading, setLoading] = useState(false)
@@ -76,14 +75,14 @@ export default function Checkout() {
     setLoading(true)
 
     try {
-      const payload = {
-        name,
-        contactNumber,
-        email: auth.email,
-        paymentMethod,          // "CASH" hoặc "VNPAY"
-        productDetails,
-        totalAmount: String(totalAmount)
-      }
+const payload = {
+  name: auth.user?.name || 'Khách hàng',
+  contactNumber: auth.user?.phone || '0000000000',
+  email: auth.email,
+  paymentMethod,
+  productDetails,
+  totalAmount: String(totalAmount)
+}
 
       const res = await api.post('/bill/generateReport', payload)
       const obj = typeof res === 'string' ? JSON.parse(res) : res
@@ -127,12 +126,7 @@ export default function Checkout() {
           <h3>Thông tin khách hàng</h3>
 
           <form onSubmit={handleCheckout}>
-            <label className="label">Họ và tên</label>
-            <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
 
-            <div style={{ height: 10 }} />
-            <label className="label">Số điện thoại</label>
-            <input className="input" value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} required />
 
             <div style={{ height: 10 }} />
             <label className="label">Email</label>

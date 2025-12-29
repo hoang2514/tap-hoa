@@ -22,56 +22,86 @@ public class JwtFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private CustomerUsersDetailsService service;
+    private CustomerUsersDetailsService userDetailsService;
 
-    Claims claims = null;
-    private String userName = null;
+    private Claims claims;
+    private String username;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
-        if (request.getServletPath().matches(
+        String path = request.getServletPath();
+
+        if (path.matches(
                 "/user/login|" +
                         "/user/forgotPassword|" +
                         "/user/signup|" +
                         "/user/verifyOTP|" +
-                        "/user/resendOTP|" +
-                        "/bill(/.*)?"
+                        "/user/resendOTP"
         )) {
             filterChain.doFilter(request, response);
             return;
         }
-        else {
-            String authorizationHeader = request.getHeader("Authorization");
-            String token = null;
 
-            if(authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-                token = authorizationHeader.substring(7);
-                userName = jwtUtil.extractUsername(token);
-                claims = jwtUtil.extractAllClaims(token);
-            }
-            
-            if(userName != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = service.loadUserByUsername(userName);
-                if(jwtUtil.validateToken(token, userDetails)) {
-                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-                }
-            }
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
+            return;
         }
+
+        String token = authHeader.substring(7);
+
+        try {
+            username = jwtUtil.extractUsername(token);
+            claims = jwtUtil.extractAllClaims(token);
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
+
+        if (username != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
+
+            UserDetails userDetails =
+                    userDetailsService.loadUserByUsername(username);
+
+            if (jwtUtil.validateToken(token, userDetails)) {
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
+                );
+
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
+            }
+        }
+
+        filterChain.doFilter(request, response);
     }
 
     public boolean isAdmin() {
-        return "admin".equalsIgnoreCase((String) claims.get("role"));
+        return claims != null &&
+                "ADMIN".equalsIgnoreCase((String) claims.get("role"));
     }
 
     public boolean isUser() {
-        return "user".equalsIgnoreCase((String) claims.get("role"));
+        return claims != null &&
+                "USER".equalsIgnoreCase((String) claims.get("role"));
     }
 
     public String getCurrentUser() {
-        return userName;
+        return username;
     }
 }

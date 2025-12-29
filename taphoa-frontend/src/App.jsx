@@ -5,6 +5,7 @@ import Layout from './components/Layout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 import Home from './pages/Home.jsx';
+import CategoryDetail from './pages/CategoryDetail.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
@@ -42,6 +43,7 @@ export default function App() {
             }
           >
             <Route index element={<Home />} />
+            <Route path="category/:id" element={<CategoryDetail />} />
             <Route path="product/:id" element={<ProductDetail />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
