@@ -14,6 +14,7 @@ import Signup from './pages/Signup.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ChangePassword from './pages/ChangePassword.jsx';
 import PaymentResult from './pages/PaymentResult.jsx';
+import Orders from './pages/Orders.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 import Dashboard from './pages/admin/Dashboard.jsx';
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
             <Route path="change-password" element={<ChangePassword />} />
+            <Route path="orders" element={<Orders />} />
 
             {/* Trang này chỉ để hiển thị hướng dẫn. Backend VNPay render view riêng */}
             <Route path="payment-result" element={<PaymentResult />} />

@@ -84,8 +84,6 @@ export default function Products() {
         quantity: String(quantity),
       };
 
-      console.log("SUBMIT PAYLOAD", payload);
-
       let res;
       if (editingId) {
         res = await api.post('/product/update', { ...payload, id: String(editingId) });

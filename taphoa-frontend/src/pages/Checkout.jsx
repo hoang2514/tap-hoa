@@ -25,8 +25,8 @@ function buildProductDetails(items) {
         name: String(it.productName || ''),
         category: String(it.categoryName || ''),
         quantity: String(quantity),
-        price: price,              // backend parse Double
-        total: price * quantity    // backend parse Double
+        price: price,              
+        total: price * quantity    
       }
     })
   )
@@ -53,6 +53,10 @@ export default function Checkout() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  const [orderUuid, setOrderUuid] = useState('')
+  const [orderStatus, setOrderStatus] = useState('')
+  const [orderPlaced, setOrderPlaced] = useState(false)
+
   const vnpayFormRef = useRef(null)
 
   const totalAmount = Math.round(Number(cart.total) || 0)
@@ -68,21 +72,23 @@ export default function Checkout() {
     )
   }
 
-  async function handleCheckout(e) {
+  async function handlePlaceOrder(e) {
     e.preventDefault()
     setError('')
     setSuccess('')
     setLoading(true)
+    setOrderUuid('')
+    setOrderStatus('')
 
     try {
-const payload = {
-  name: auth.user?.name || 'Khách hàng',
-  contactNumber: auth.user?.phone || '0000000000',
-  email: auth.email,
-  paymentMethod,
-  productDetails,
-  totalAmount: String(totalAmount)
-}
+      const payload = {
+        name: auth.user?.name || 'Khách hàng',
+        contactNumber: auth.user?.phone || '0000000000',
+        email: auth.email,
+        paymentMethod,
+        productDetails,
+        totalAmount: String(totalAmount)
+      }
 
       const res = await api.post('/bill/generateReport', payload)
       const obj = typeof res === 'string' ? JSON.parse(res) : res
@@ -93,22 +99,51 @@ const payload = {
         )
       }
 
-      setSuccess('Tạo hóa đơn thành công.')
+      setOrderUuid(obj.uuid)
 
-      if (paymentMethod === 'VNPAY') {
-        const form = vnpayFormRef.current
-        form.elements.amount.value = String(totalAmount)
-        form.elements.orderInfo.value = obj.uuid
-        form.submit()
-        return
+      // Chờ RabbitMQ xử lý đơn hàng
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Chờ đến khi đơn hàng được xử lý
+      let status = 'CONFIRMING';
+      let attempts = 0;
+      while (status === 'CONFIRMING' && attempts < 120) { // 60 seconds
+        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+          const statusRes = await api.get(`/bill/status/${obj.uuid}`);
+          status = statusRes.status;
+        } catch (e) {
+          console.error('Error polling status', e);
+        }
+        attempts++;
       }
+      setOrderStatus(status)
 
-      await cart.refresh()
+      if (status === 'PREPARING_SHIPMENT') {
+        setSuccess('Đặt hàng thành công.')
+        await cart.refresh()
+        setOrderPlaced(true)
+      } else if (status === 'AWAITING_PAYMENT') {
+        setSuccess('Đặt hàng thành công. Vui lòng thanh toán.')
+        setOrderPlaced(true)
+      } else {
+        throw new Error('Đơn hàng không thể đặt. Có thể hết hàng hoặc lỗi hệ thống.')
+      }
     } catch (err) {
-      setError(err?.message || 'Không thể tạo hóa đơn')
+      setError(err?.message || 'Không thể đặt hàng')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handlePayment(e) {
+    e.preventDefault()
+    if (!orderUuid || orderStatus !== 'AWAITING_PAYMENT') return
+
+    const form = vnpayFormRef.current
+    form.elements.amount.value = String(totalAmount)
+    form.elements.orderInfo.value = orderUuid
+    form.submit()
   }
 
   return (
@@ -125,7 +160,7 @@ const payload = {
         <div className="card">
           <h3>Thông tin khách hàng</h3>
 
-          <form onSubmit={handleCheckout}>
+          <form onSubmit={handlePlaceOrder}>
 
 
             <div style={{ height: 10 }} />
@@ -134,15 +169,25 @@ const payload = {
 
             <div style={{ height: 10 }} />
             <label className="label">Phương thức thanh toán</label>
-            <select className="input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+            <select className="input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={orderPlaced}>
               <option value="CASH">Tiền mặt</option>
               <option value="VNPAY">VNPay</option>
             </select>
 
             <div style={{ height: 14 }} />
-            <button className="btn primary" disabled={loading}>
-              {loading ? 'Đang xử lý...' : paymentMethod === 'VNPAY' ? 'Thanh toán VNPay' : 'Tạo hóa đơn'}
-            </button>
+            {!orderPlaced && (
+              <button className="btn primary" disabled={loading}>
+                {loading ? 'Đang xử lý...' : 'Đặt hàng'}
+              </button>
+            )}
+
+            {paymentMethod === 'VNPAY' && orderStatus === 'AWAITING_PAYMENT' && (
+              <div style={{ marginTop: 10 }}>
+                <button className="btn primary" onClick={handlePayment}>
+                  Thanh toán VNPay
+                </button>
+              </div>
+            )}
 
             {loading && <Loader />}
           </form>
@@ -164,7 +209,7 @@ const payload = {
             <div key={it.cartItemId} style={{ marginBottom: 8 }}>
               <div style={{ fontWeight: 700 }}>{it.productName}</div>
               <div className="muted small">
-                {formatMoney(it.price)} × {it.quantity}
+                {formatMoney(it.price)} x {it.quantity}
               </div>
             </div>
           ))}

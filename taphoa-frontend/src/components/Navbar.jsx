@@ -14,8 +14,8 @@ export default function Navbar() {
     <div className="navbar">
       <div className="inner">
         <div className="row" style={{ alignItems: 'center' }}>
-          <Link to={auth.isAuthenticated ? '/' : '/login'} style={{ fontWeight: 700 }}>
-            Tạp Hóa
+          <Link to={auth.isAuthenticated ? '/' : '/login'} style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: 0.5, color: '#ffffff' }}>
+            Tạp hóa
           </Link>
           {auth.isAuthenticated ? (
             <span className="badge">{auth.email}</span>
@@ -38,6 +38,7 @@ export default function Navbar() {
               <>
                 <Link className="btn" to="/">Trang chủ</Link>
                 <Link className="btn" to="/cart">Giỏ hàng ({count})</Link>
+                <Link className="btn" to="/orders">Đơn hàng</Link>
                 <Link className="btn" to="/change-password">Đổi mật khẩu</Link>
               </>
             )}

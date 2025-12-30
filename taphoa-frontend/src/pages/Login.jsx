@@ -60,7 +60,8 @@ export default function Login() {
   return (
     <div className="container" style={{ maxWidth: 420 }}>
       <div className="card">
-        <h2 style={{ marginTop: 0 }}>Đăng nhập</h2>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, letterSpacing: 0.5, color: '#ff0000', textAlign: 'center', marginTop: 0, marginBottom: 5 }}>Tạp hóa</h1>
+        <h2 style={{ textAlign: 'center', marginTop: 0, marginBottom: 15, fontSize: '1.3rem', fontWeight: 'normal' }}>Đăng nhập</h2>
 
         <Message type="error" text={error} />
 

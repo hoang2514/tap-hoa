@@ -22,7 +22,6 @@ export default function Signup() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [canResend, setCanResend] = useState(false);
 
-  // Countdown timer
   useEffect(() => {
     if (showOtpForm && timeLeft > 0) {
       const timer = setInterval(() => {

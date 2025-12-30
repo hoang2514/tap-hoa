@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -101,11 +102,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     // Khi update: Xóa cache danh sách, cache category và cache CỤ THỂ của ID đó
     @Caching(evict = {
             @CacheEvict(value = "products", allEntries = true),
             @CacheEvict(value = "productsByCategory", allEntries = true),
-            @CacheEvict(value = "productById", key = "#requestMap.get('id')")
+            @CacheEvict(value = "productById", allEntries = true)
     })
     public ResponseEntity<String> updateProduct(Map<String, String> requestMap) {
         try {
@@ -136,7 +138,7 @@ public class ProductServiceImpl implements ProductService {
     @Caching(evict = {
             @CacheEvict(value = "products", allEntries = true),
             @CacheEvict(value = "productsByCategory", allEntries = true),
-            @CacheEvict(value = "productById", key = "#id")
+            @CacheEvict(value = "productById", allEntries = true)
     })
     public ResponseEntity<String> deleteProduct(Integer id) {
         try {
@@ -160,7 +162,7 @@ public class ProductServiceImpl implements ProductService {
     @Caching(evict = {
             @CacheEvict(value = "products", allEntries = true),
             @CacheEvict(value = "productsByCategory", allEntries = true),
-            @CacheEvict(value = "productById", key = "#requestMap.get('id')")
+            @CacheEvict(value = "productById", allEntries = true)
     })
     public ResponseEntity<String> updateStatus(Map<String, String> requestMap) {
         try {

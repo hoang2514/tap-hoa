@@ -5,16 +5,17 @@ import Loader from '../../components/Loader.jsx'
 import { createApi } from '../../lib/api.js'
 import { useAuth } from '../../lib/auth.jsx'
 
-function downloadBlob(blob, filename) {
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
-}
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'AWAITING_PAYMENT': return 'Đang chờ thanh toán'
+      case 'PAYMENT_FAILED': return 'Thanh toán thất bại'
+      case 'PREPARING_SHIPMENT': return 'Đang chuẩn bị giao hàng'
+      case 'SHIPPING': return 'Đang giao hàng'
+      case 'DELIVERED': return 'Đã giao thành công'
+      case 'CANCELLED': return 'Đơn hàng bị hủy'
+      default: return status
+    }
+  }
 
 export default function Bills() {
   const auth = useAuth()
@@ -48,7 +49,6 @@ export default function Bills() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleDownloadPdf(uuid) {
@@ -74,6 +74,18 @@ export default function Bills() {
       setTimeout(() => setMsg(''), 1200)
     } catch (e) {
       setErr(e.message || 'Không thể tải PDF')
+    }
+  }
+
+  async function handleUpdateStatus(id, newStatus) {
+    setErr('')
+    setMsg('')
+    try {
+      await api.post(`/bill/updateOrderStatus/${id}`, { status: newStatus })
+      setMsg('Đã cập nhật trạng thái')
+      await load()
+    } catch (e) {
+      setErr(e.message || 'Không thể cập nhật trạng thái')
     }
   }
 
@@ -117,6 +129,7 @@ export default function Bills() {
               <th>Khách hàng</th>
               <th>Tổng tiền</th>
               <th>Thanh toán</th>
+              <th>Trạng thái</th>
               <th></th>
             </tr>
           </thead>
@@ -133,11 +146,22 @@ export default function Bills() {
                 </td>
                 <td>{Number(b.total).toLocaleString('vi-VN')} ₫</td>
                 <td>{b.paymentMethod}</td>
-                <td style={{ width: 260 }}>
+                <td>{getStatusText(b.status)}</td>
+                <td style={{ width: 320 }}>
                   <div className="row" style={{ flexWrap: 'nowrap' }}>
                     <button className="btn" onClick={() => handleDownloadPdf(b.uuid)}>
                       Tải PDF
                     </button>
+                    {b.status === 'PREPARING_SHIPMENT' && (
+                      <button className="btn primary" onClick={() => handleUpdateStatus(b.id, 'SHIPPING')}>
+                        Giao hàng
+                      </button>
+                    )}
+                    {b.status === 'SHIPPING' && (
+                      <button className="btn success" onClick={() => handleUpdateStatus(b.id, 'DELIVERED')}>
+                        Đã giao
+                      </button>
+                    )}
                     <button className="btn danger" onClick={() => handleDelete(b.id)}>
                       Xoá
                     </button>

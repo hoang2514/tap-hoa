@@ -39,6 +39,7 @@ export default function Home() {
 
   return (
     <div>
+      <img src="/landing.jpg" alt="Landing" style={{ width: '100%', height: 'auto', marginBottom: 20 }} />
       <h2 style={{ marginTop: 0 }}>Danh mục sản phẩm</h2>
       <Message type="error" text={err} />
 

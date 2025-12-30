@@ -1,12 +1,15 @@
 package com.inn.POJO;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -36,7 +39,6 @@ public class Bill implements Serializable{
     @Column(name = "name")
     private String name;
 
-
     @Column(name = "email")
     private String email;
 
@@ -54,4 +56,14 @@ public class Bill implements Serializable{
 
     @Column(name = "createdby")
     private String createdBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private OrderStatus status;
+
+    @Column(name = "createddate")
+    private LocalDateTime createdDate;
+
+    @Column(name = "updateddate")
+    private LocalDateTime updatedDate;
 }

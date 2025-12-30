@@ -24,14 +24,19 @@ public class BillView {
     @PostMapping("/submitOrder")
     public String submitOrder(@RequestParam("amount") int orderTotal,
                               @RequestParam("orderInfo") String orderInfo,
-                              HttpServletRequest request) {
+                              HttpServletRequest request, Model model) {
 
-        String baseUrl = request.getScheme() + "://" +
-                request.getServerName() + ":" +
-                request.getServerPort();
+        try {
+            String baseUrl = request.getScheme() + "://" +
+                    request.getServerName() + ":" +
+                    request.getServerPort();
 
-        String vnpayUrl = billService.createOrder(orderTotal, orderInfo, baseUrl);
-        return "redirect:" + vnpayUrl;
+            String vnpayUrl = billService.createOrder(orderTotal, orderInfo, baseUrl);
+            return "redirect:" + vnpayUrl;
+        } catch (RuntimeException e) {
+            model.addAttribute("error", e.getMessage());
+            return "orderfail";
+        }
     }
 
     @GetMapping("/vnpay-payment")
@@ -43,6 +48,9 @@ public class BillView {
         String paymentTime = request.getParameter("vnp_PayDate");
         String transactionId = request.getParameter("vnp_TransactionNo");
         String totalPrice = request.getParameter("vnp_Amount");
+
+        // Handle payment result via RabbitMQ
+        billService.handlePaymentResult(paymentStatus, orderInfo);
 
         model.addAttribute("orderId", orderInfo);
         model.addAttribute("totalPrice", totalPrice);

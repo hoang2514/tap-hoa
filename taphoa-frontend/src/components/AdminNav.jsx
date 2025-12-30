@@ -6,8 +6,8 @@ export default function AdminNav() {
     padding: '6px 10px',
     borderRadius: 8,
     border: '1px solid #e7e9ee',
-    background: isActive ? '#111' : '#fff',
-    color: isActive ? '#fff' : '#111'
+    background: isActive ? '#ed1c24' : '#FFFFFF',
+    color: isActive ? '#FFFFFF' : '#ed1c24'
   });
 
   return (
